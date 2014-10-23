@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Metapoints</title>
+    <style type="text/css">
+      table {
+        border-collapse: collapse
+      }
+      td, th {
+        border: 1px solid black;
+        padding: 5px
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Metapoints</h1>
+    <table id="main">
+      <tr>
+        <th>Name</th>
+        <th>Metapoints</th>
+        <th>&nbsp;</th>
+      </tr>
+    </table>
+    <script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      $(document).ready(function() {
+        function getPoster(name, url) {
+          return function() {
+            $.ajax({
+              type: "POST",
+              url: url,
+              data: name
+            });
+          };
+        }
+
+        var $main = $("#main");
+
+        $.ajax({
+          url: "/points.json",
+          success: function(data) {
+            $.each(data.people, function(i, person) {
+              var $tr = $("<tr>");
+              var $nameTd = $("<td>");
+              $nameTd.text(person.name);
+              var $pointsTd = $("<td>");
+              $pointsTd.attr({ id: person.name });
+              $pointsTd.text(person.metapoints);
+              var $actionsTd = $("<td>");
+              var $addButton = $("<button>");
+              $addButton.text("+");
+              $addButton.on("click", getPoster(person.name, "/inc"));
+              var $subButton = $("<button>");
+              $subButton.text("-");
+              $subButton.on("click", getPoster(person.name, "/dec"));
+              $actionsTd.append($addButton);
+              $actionsTd.append($subButton);
+              $tr.append($nameTd);
+              $tr.append($pointsTd);
+              $tr.append($actionsTd);
+              $main.append($tr);
+            });
+          }
+        });
+
+        var update = function() {
+          $.ajax({
+            url: "/points.json",
+            success: function(data) {
+              $.each(data.people, function(i, person) {
+                $("#" + person.name).text(person.metapoints);
+              });
+            }
+          });
+        };
+        setInterval(update, 1000);
+      });
+    </script>
+  </body>
+</html>
