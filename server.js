@@ -35,10 +35,14 @@ http.createServer(function (req, res) {
         req.connection.destroy();
       }
       return;
+    } else if(req.url === "/metapoints.js") {
+      file = "metapoints.js";
     }
 
     if(file !== "") {
-      res.writeHead(200, {'Content-Type': 'text/' + file.split(".")[1]});
+      var ext = file.split(".")[1];
+      var type = ext === "js" ? "javascript" : ext;
+      res.writeHead(200, {'Content-Type': 'text/' + type});
       fs.readFile(file, "utf8", function(err, data) {
         if(err) {
           req.connection.destroy();
@@ -78,6 +82,7 @@ http.createServer(function (req, res) {
           } else {
             person.metapoints--;
           }
+          person.lastUpdatedBy = req.connection.remoteAddress;
           res.end("Success");
         } else {
           res.end("Unknown person " + body);
