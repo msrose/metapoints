@@ -1,6 +1,7 @@
 var http = require('http');
 var fs = require('fs');
 var qs = require('querystring');
+var socket = require('socket.io');
 
 var pointsFile = process.argv[2];
 
@@ -25,6 +26,13 @@ if(!pointsFile) {
   var port = parseInt(process.argv[5]) || 1338;
 
   var server = http.createServer(serverHandler).listen(port, ip);
+
+  var io = socket(server);
+
+  io.on("connection", function(socket) {
+    console.log("Socket connection established");
+    socket.emit("update", cache);
+  });
 
   function serverHandler(req, res) {
     console.log("Request made: ", req.method, req.connection.remoteAddress, req.url);
@@ -109,6 +117,7 @@ if(!pointsFile) {
               res.end("Invalid name provided");
             } else {
               cache.people.push({ name: name, ip: ip, metapoints: 0 });
+              io.emit("update", cache);
               res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
               res.end("Registered " + body + " at " + ip);
             }
@@ -139,6 +148,7 @@ if(!pointsFile) {
                 person.metapoints--;
               }
               person.lastUpdatedBy = requester.name;
+              io.emit("update", cache);
               res.writeHead(200, { "Content-Type": "text/plain" });
               res.end("Successfully updated " + person.name);
             } else {

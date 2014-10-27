@@ -1,16 +1,14 @@
 var app = angular.module("metapoints", []);
 
-app.controller("metapoints", ["$scope", "$http", "$interval",
-  function($scope, $http, $interval) {
-    var updatePoints = function() {
-      $http.get("/points.json")
-        .success(function(data, status, headers, config) {
-          $scope.pointsData = data.people;
-        });
-    };
+app.controller("metapoints", ["$rootScope", "$scope", "$http",
+  function($rootScope, $scope, $http) {
+    var socket = io();
 
-    updatePoints();
-    $interval(updatePoints, 1000);
+    socket.on("update", function(data) {
+      $rootScope.$apply(function() {
+        $scope.pointsData = data.people;
+      });
+    });
 
     $scope.inc = function(name) {
       $http.post("/inc", name);

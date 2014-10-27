@@ -1,0 +1,11 @@
+{
+  "name": "metapoints",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msrose/metapoints"
+  }
+  "dependencies": {
+    "socket.io": "^1.1.0"
+  }
+}
