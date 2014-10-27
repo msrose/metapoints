@@ -44,13 +44,24 @@ if(!pointsFile) {
   }
 
   io.on("connection", function(socket) {
-    console.log("Socket connection established", socket.handshake.address);
+    var ip = socket.handshake.address;
+
+    console.log("Socket connection established", ip);
     setActiveState(socket.handshake.address, true);
 
     socket.on("disconnect", function() {
       console.log("Socket disconnected", socket.handshake.address);
       setActiveState(socket.handshake.address, false);
     });
+
+    var me;
+    for(var i in cache.people) {
+      if(cache.people[i].ip === ip) {
+        me = cache.people[i];
+        break;
+      }
+    }
+    socket.emit("me data", me.name);
   });
 
   function serverHandler(req, res) {
@@ -168,13 +179,16 @@ if(!pointsFile) {
             }
 
             if(person) {
+              var desc;
               if(req.url === "/inc") {
                 person.metapoints++;
+                desc = "increased";
               } else {
                 person.metapoints--;
+                desc = "decreased";
               }
               person.lastUpdatedBy = requester.name;
-              io.emit("update", cache);
+              io.emit("update", { people: cache.people, changed: { name: person.name, changer: requester.name, desc: desc }});
               res.writeHead(200, { "Content-Type": "text/plain" });
               res.end("Successfully updated " + person.name);
             } else {

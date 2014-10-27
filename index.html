@@ -8,9 +8,9 @@
     <script src="metapoints.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
-    <div class="metapoints">
+    <div class="metapoints" ng-controller="metapoints">
       <h1>Metapoints</h1>
-      <table id="main" ng-controller="metapoints">
+      <table id="main">
         <tr>
           <th>Rank</th>
           <th>Name</th>
@@ -29,6 +29,7 @@
           <td>{{p.lastUpdatedBy}}</td>
         </tr>
       </table>
+      <button ng-click="enableNotifications()" ng-if="!notificationsEnabled">Enable Notifications</button>
     </div>
   </body>
 </html>
