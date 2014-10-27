@@ -10,7 +10,12 @@ if(!pointsFile) {
   var cache = null;
 
   var pointsData = fs.readFileSync(pointsFile, "utf8");
-  cache = JSON.parse(pointsData);
+  if(pointsData) {
+    cache = JSON.parse(pointsData);
+  } else {
+    cache = {};
+  }
+
   if(!cache.people) {
     cache.people = [];
   }
@@ -19,7 +24,9 @@ if(!pointsFile) {
   var ip = process.argv[4] || "localhost";
   var port = parseInt(process.argv[5]) || 1338;
 
-  http.createServer(function (req, res) {
+  var server = http.createServer(serverHandler).listen(port, ip);
+
+  function serverHandler(req, res) {
     console.log("Request made: ", req.method, req.connection.remoteAddress, req.url);
 
     var ip = req.connection.remoteAddress;
@@ -59,6 +66,9 @@ if(!pointsFile) {
       } else if(req.url === "/metapoints.js") {
         file = "metapoints.js";
         contentType = "javascript";
+      } else if(req.url === "/styles.css") {
+        file = "styles.css";
+        contentType = "css";
       } else {
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("Not found");
@@ -139,7 +149,7 @@ if(!pointsFile) {
         }
       });
     }
-  }).listen(port, ip);
+  }
 
   console.log("Server running at " + ip + ":" + port);
 
