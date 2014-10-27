@@ -29,14 +29,37 @@ if(!pointsFile) {
 
   var io = socket(server);
 
-  function setActiveState(ip, active) {
+  function findPersonBy(prop, val) {
     for(var i in cache.people) {
-      if(cache.people[i].ip === ip) {
-        cache.people[i].active += active ? 1 : -1;
-        break;
+      if(cache.people[i][prop] === val) {
+        return cache.people[i];
       }
     }
+    return null;
+  }
+
+  function setActiveState(ip, active) {
+    findPersonBy("ip", ip).active += active ? 1 : -1;
     io.emit("update", cache);
+  }
+
+  function changeMetapoints(name, type, requester) {
+    var person = findPersonBy("name", name);
+
+    if(person) {
+      var desc;
+      if(type === "inc") {
+        person.metapoints++;
+        desc = "increased";
+      } else {
+        person.metapoints--;
+        desc = "decreased";
+      }
+      person.lastUpdatedBy = requester;
+      io.emit("update", { people: cache.people, changed: { name: person.name, changer: requester, desc: desc }});
+    } else {
+      console.error("Person not found!", name);
+    }
   }
 
   for(var i in cache.people) {
@@ -47,20 +70,19 @@ if(!pointsFile) {
     var ip = socket.handshake.address;
 
     console.log("Socket connection established", ip);
-    setActiveState(socket.handshake.address, true);
+    setActiveState(ip, true);
 
     socket.on("disconnect", function() {
-      console.log("Socket disconnected", socket.handshake.address);
-      setActiveState(socket.handshake.address, false);
+      console.log("Socket disconnected", ip);
+      setActiveState(ip, false);
     });
 
-    var me;
-    for(var i in cache.people) {
-      if(cache.people[i].ip === ip) {
-        me = cache.people[i];
-        break;
-      }
-    }
+    socket.on("change metapoints", function(data) {
+      console.log("Changing metapoints:", data);
+      changeMetapoints(data.name, data.type, data.requester);
+    });
+
+    var me = findPersonBy("ip", ip);
     socket.emit("me data", me.name);
   });
 
@@ -68,13 +90,7 @@ if(!pointsFile) {
     console.log("Request made: ", req.method, req.connection.remoteAddress, req.url);
 
     var ip = req.connection.remoteAddress;
-    var requester;
-    for(var i in cache.people) {
-      if(cache.people[i].ip === ip) {
-        requester = cache.people[i];
-        break;
-      }
-    }
+    var requester = findPersonBy("ip", ip);
 
     if(req.method === "GET") {
       var file = "";
@@ -170,31 +186,11 @@ if(!pointsFile) {
           }
 
           if(req.url === "/inc" || req.url === "/dec") {
-            var person;
-            for(var i in cache.people) {
-              if(cache.people[i].name === body) {
-                person = cache.people[i];
-                break;
-              }
-            }
-
-            if(person) {
-              var desc;
-              if(req.url === "/inc") {
-                person.metapoints++;
-                desc = "increased";
-              } else {
-                person.metapoints--;
-                desc = "decreased";
-              }
-              person.lastUpdatedBy = requester.name;
-              io.emit("update", { people: cache.people, changed: { name: person.name, changer: requester.name, desc: desc }});
-              res.writeHead(200, { "Content-Type": "text/plain" });
-              res.end("Successfully updated " + person.name);
-            } else {
-              res.writeHead(404, { "Content-Type": "text/plain" });
-              res.end("Unknown person " + body);
-            }
+            res.writeHead(410, { "Content-Type": "text/plain" });
+            res.end("HTTP no longer supported for changing metapoints");
+          } else {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("Unknown request");
           }
         }
       });

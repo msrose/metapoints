@@ -48,11 +48,11 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout",
     $scope.notificationsEnabled = Notification ? Notification.permission === "granted" : false;
 
     $scope.inc = function(name) {
-      $http.post("/inc", name);
+      socket.emit("change metapoints", { name: name, type: "inc", requester: $scope.me });
     };
 
     $scope.dec = function(name) {
-      $http.post("/dec", name);
+      socket.emit("change metapoints", { name: name, type: "dec", requester: $scope.me });
     };
   }
 ]);
