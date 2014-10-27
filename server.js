@@ -32,11 +32,15 @@ if(!pointsFile) {
   function setActiveState(ip, active) {
     for(var i in cache.people) {
       if(cache.people[i].ip === ip) {
-        cache.people[i].active = active;
+        cache.people[i].active += active ? 1 : -1;
         break;
       }
     }
     io.emit("update", cache);
+  }
+
+  for(var i in cache.people) {
+    cache.people[i].active = 0;
   }
 
   io.on("connection", function(socket) {
@@ -131,6 +135,13 @@ if(!pointsFile) {
               res.writeHead(400, { "Content-Type": "text/plain" });
               res.end("Invalid name provided");
             } else {
+              for(var i in cache.people) {
+                if(cache.people[i].name === body) {
+                  res.writeHead(412, { "Content-Type": "text/plain" });
+                  return res.end("Name " + body + " already taken");
+                }
+              }
+
               cache.people.push({ name: name, ip: ip, metapoints: 0 });
               io.emit("update", cache);
               res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });

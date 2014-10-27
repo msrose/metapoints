@@ -1,4 +1,4 @@
-points.json
+points*.json
 config.json
 *.swp
 *.log
