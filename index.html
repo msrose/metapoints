@@ -20,7 +20,7 @@
         </tr>
         <tr ng-repeat="p in pointsData | orderBy:'metapoints':true">
           <td class="align-right">{{$index + 1}}</td>
-          <td>{{p.name}}</td>
+          <td style="background-color:{{p.active ? 'lightgreen' : ''}}">{{p.name}}</td>
           <td class="align-right">{{p.metapoints}}</td>
           <td>
             <button class="action-btn" ng-click="inc(p.name)">+</button>

@@ -29,9 +29,24 @@ if(!pointsFile) {
 
   var io = socket(server);
 
+  function setActiveState(ip, active) {
+    for(var i in cache.people) {
+      if(cache.people[i].ip === ip) {
+        cache.people[i].active = active;
+        break;
+      }
+    }
+    io.emit("update", cache);
+  }
+
   io.on("connection", function(socket) {
-    console.log("Socket connection established");
-    socket.emit("update", cache);
+    console.log("Socket connection established", socket.handshake.address);
+    setActiveState(socket.handshake.address, true);
+
+    socket.on("disconnect", function() {
+      console.log("Socket disconnected", socket.handshake.address);
+      setActiveState(socket.handshake.address, false);
+    });
   });
 
   function serverHandler(req, res) {
