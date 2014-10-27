@@ -33,10 +33,13 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout",
 
     $scope.enableNotifications = function() {
       if(Notification && !$scope.notificationsEnabled) {
-        Notification.requestPermission();
-        if(Notification.permission === "granted") {
-          $scope.notificationsEnabled = true;
-        }
+        Notification.requestPermission(function() {
+          $rootScope.$apply(function() {
+            if(Notification.permission === "granted") {
+              $scope.notificationsEnabled = true;
+            }
+          });
+        });
       }
     };
 

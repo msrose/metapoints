@@ -33,9 +33,13 @@ th {
   border-radius: 5px;
 }
 
-#name {
+.regular-btn {
   border-radius: 5px;
   padding: 5px;
+}
+
+#enable_notify {
+  margin-top: 10px;
 }
 
 .action-btn {
