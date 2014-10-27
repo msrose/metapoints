@@ -24,12 +24,12 @@ Visit [http://localhost:1338/](http://localhost:1338/) to start getting meta.
 Start the server with optional command line arguments.
 
 ```
-$ node server.js points.json [saveFreqInMins = 5] [ip=localhost] [port=1338]
+$ node server.js points.json [saveFreqInMins] [ip] [port]
 ```
 
-`saveFreqInMins`: The frequency with which the server writes the data to `points.json`.
-`ip`: The address to start the HTTP server listening.
-`port`: The port to start the server.
+- `saveFreqInMins`: The frequency with which the server writes the data to `points.json`. Default is `5`.
+- `ip`: The address to start the HTTP server listening. Default is `localhost`.
+- `port`: The port to start the server. Default is `1338`.
 
 So if you specify your LAN IP, you can tell everyone on your network to sign up for metapoints at [http://you.lan.ip:1338]().
 
@@ -45,4 +45,4 @@ and look for IPv4.
 
 ### On Unix
 
-Not sure. Try grepping through `ifconfig`.
+Not sure, but will find out soon. Try grepping through `ifconfig`.
