@@ -39,8 +39,11 @@ if(!pointsFile) {
   }
 
   function setActiveState(ip, active) {
-    findPersonBy("ip", ip).active += active ? 1 : -1;
-    io.emit("update", cache);
+    var person = findPersonBy("ip", ip);
+    if(person) {
+      person.active += active ? 1 : -1;
+      io.emit("update", cache);
+    }
   }
 
   var pointsAmounts = {
@@ -55,7 +58,7 @@ if(!pointsFile) {
   function changeMetapoints(name, type, requester, size) {
     var person = findPersonBy("name", name);
 
-    var amount = pointsAmounts[size] || pointsAmounts["default"];
+    var amount = pointsAmounts[size] || pointsAmounts["01-default"];
 
     if(person) {
       var desc;
@@ -90,10 +93,10 @@ if(!pointsFile) {
     });
 
     socket.on("change metapoints", function(data) {
-      var requester = findPersonBy("name", data.requester);
-      if(!requester.timedOut) {
+      var requester = findPersonBy("ip", ip);
+      if(requester && !requester.timedOut) {
         console.log("Changing metapoints:", data);
-        changeMetapoints(data.name, data.type, data.requester, data.size);
+        changeMetapoints(data.name, data.type, requester.name, data.size);
         requester.timedOut = true;
         socket.emit("timeout change", { timedOut: true, duration: 10000 });
         setTimeout(function() {
@@ -104,7 +107,9 @@ if(!pointsFile) {
     });
 
     var me = findPersonBy("ip", ip);
-    socket.emit("me data", { name: me.name, timedOut: me.timedOut });
+    if(me) {
+      socket.emit("me data", { name: me.name, timedOut: me.timedOut });
+    }
   });
 
   function serverHandler(req, res) {
@@ -188,13 +193,13 @@ if(!pointsFile) {
               res.end("Invalid name provided");
             } else {
               for(var i in cache.people) {
-                if(cache.people[i].name === body) {
+                if(cache.people[i].name === name) {
                   res.writeHead(412, { "Content-Type": "text/plain" });
                   return res.end("Name " + body + " already taken");
                 }
               }
 
-              cache.people.push({ name: name, ip: ip, metapoints: 0 });
+              cache.people.push({ name: name, ip: ip, metapoints: 0, active: 0 });
               io.emit("update", cache);
               res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
               res.end("Registered " + body + " at " + ip);

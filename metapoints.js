@@ -76,7 +76,6 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout", "$htt
       socket.emit("change metapoints", {
         name: name,
         type: "inc",
-        requester: $scope.me,
         size: $scope.selectedPointSize
       });
     };
@@ -85,7 +84,6 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout", "$htt
       socket.emit("change metapoints", {
         name: name,
         type: "dec",
-        requester: $scope.me,
         size: $scope.selectedPointSize
       });
     };
