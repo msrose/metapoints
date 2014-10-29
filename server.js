@@ -43,20 +43,31 @@ if(!pointsFile) {
     io.emit("update", cache);
   }
 
-  function changeMetapoints(name, type, requester) {
+  var pointsAmounts = {
+    "06-xxlarge": 100,
+    "05-xlarge": 50,
+    "04-large": 25,
+    "03-medium": 10,
+    "02-small": 5,
+    "01-default": 1
+  };
+
+  function changeMetapoints(name, type, requester, size) {
     var person = findPersonBy("name", name);
+
+    var amount = pointsAmounts[size] || pointsAmounts["default"];
 
     if(person) {
       var desc;
       if(type === "inc") {
-        person.metapoints++;
+        person.metapoints += amount;
         desc = "increased";
       } else {
-        person.metapoints--;
+        person.metapoints -= amount;
         desc = "decreased";
       }
       person.lastUpdatedBy = requester;
-      io.emit("update", { people: cache.people, changed: { name: person.name, changer: requester, desc: desc }});
+      io.emit("update", { people: cache.people, changed: { name: person.name, changer: requester, desc: desc + " your metapoints by " + amount }});
     } else {
       console.error("Person not found!", name);
     }
@@ -64,6 +75,7 @@ if(!pointsFile) {
 
   for(var i in cache.people) {
     cache.people[i].active = 0;
+    cache.people[i].timedOut = false;
   }
 
   io.on("connection", function(socket) {
@@ -78,12 +90,21 @@ if(!pointsFile) {
     });
 
     socket.on("change metapoints", function(data) {
-      console.log("Changing metapoints:", data);
-      changeMetapoints(data.name, data.type, data.requester);
+      var requester = findPersonBy("name", data.requester);
+      if(!requester.timedOut) {
+        console.log("Changing metapoints:", data);
+        changeMetapoints(data.name, data.type, data.requester, data.size);
+        requester.timedOut = true;
+        socket.emit("timeout change", { timedOut: true, duration: 10000 });
+        setTimeout(function() {
+          requester.timedOut = false;
+          socket.emit("timeout change", { timedOut: false });
+        }, 10000);
+      }
     });
 
     var me = findPersonBy("ip", ip);
-    socket.emit("me data", me.name);
+    socket.emit("me data", { name: me.name, timedOut: me.timedOut });
   });
 
   function serverHandler(req, res) {
@@ -123,6 +144,10 @@ if(!pointsFile) {
       } else if(req.url === "/styles.css") {
         file = "styles.css";
         contentType = "css";
+      } else if(req.url === "/pointSizes") {
+        res.writeHead(200, { "Content-Type": "text/json" });
+        res.end(JSON.stringify(pointsAmounts));
+        return;
       } else {
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("Not found");

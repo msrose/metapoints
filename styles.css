@@ -51,3 +51,16 @@ th {
 .align-right {
   text-align: right;
 }
+
+.point-sizes {
+  overflow: hidden;
+}
+
+.point-sizes .size-option {
+  float: left;
+  margin-left: 15px;
+}
+
+.point-sizes .caption {
+  float: left;
+}

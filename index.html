@@ -15,7 +15,8 @@
           <th>Rank</th>
           <th>Name</th>
           <th>Metapoints</th>
-          <th>&nbsp;</th>
+          <th ng-show="remainingTimeout > 0">{{remainingTimeout}}</th>
+          <th ng-show="remainingTimeout <= 0">&nbsp;</th>
           <th>Last Updated By</th>
         </tr>
         <tr ng-repeat="p in pointsData | orderBy:'metapoints':true">
@@ -23,12 +24,19 @@
           <td style="background-color:{{p.active > 0 ? 'lightgreen' : ''}}">{{p.name}}</td>
           <td class="align-right">{{p.metapoints}}</td>
           <td>
-            <button class="action-btn" ng-click="inc(p.name)">+</button>
-            <button class="action-btn" ng-click="dec(p.name)">-</button>
+            <button class="action-btn" ng-click="inc(p.name)" ng-disabled="timedOut">+</button>
+            <button class="action-btn" ng-click="dec(p.name)" ng-disabled="timedOut">-</button>
           </td>
           <td>{{p.lastUpdatedBy}}</td>
         </tr>
       </table>
+      <div class="point-sizes">
+          <span class="caption">Point Magnitude</span>
+          <label ng-repeat="(desc, amount) in pointSizes" class="size-option">
+            {{amount}}
+            <input type="radio" ng-model="$parent.selectedPointSize" ng-value="desc" name="pointSize">
+          </label>
+      </div>
       <button id="enable_notify" class="regular-btn" ng-click="enableNotifications()" ng-if="!notificationsEnabled">Enable Notifications</button>
     </div>
   </body>
