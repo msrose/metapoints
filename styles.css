@@ -11,6 +11,7 @@ body {
 table {
   border-collapse: collapse;
   background-color: white;
+  width: 100%;
 }
 
 td, th {
@@ -22,8 +23,12 @@ th {
   background-color: lightgray;
 }
 
+h1 {
+  width: 50%;
+}
+
 .register, .metapoints {
-  width: 500px;
+  width: 750px;
   margin: 0 auto;
   padding: 0 30px;
 }
@@ -40,6 +45,7 @@ th {
 
 #enable_notify {
   margin-top: 10px;
+  float: right;
 }
 
 .action-btn {
@@ -63,4 +69,26 @@ th {
 
 .point-sizes .caption {
   float: left;
+}
+
+.grayed-out {
+  background-color: lightgray;
+}
+
+.active {
+  background-color: lightgreen;
+}
+
+.power-level {
+  padding: 2px;
+  background-color: yellow;
+  border: 1px solid black;
+}
+
+.error {
+  color: red;
+}
+
+.wrapper {
+  clear: both;
 }

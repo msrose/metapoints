@@ -4,11 +4,31 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout", "$htt
   function($rootScope, $scope, $http, $timeout, $http) {
     var socket = io();
 
+    $scope.updateFeed = [];
+
+    $scope.errorMsg = null;
+
+    $scope.getPowerArray = function(n) {
+      var a = [];
+      for(var i = n - 9; i <= n; i++) {
+        if(i > 0) {
+          a.push(i);
+        }
+      }
+      return a;
+    };
+
     socket.on("update", function(data) {
       $rootScope.$apply(function() {
         $scope.pointsData = data.people;
+        if(data.changed) {
+          $scope.updateFeed.unshift(data.changed);
+        }
+        if($scope.updateFeed.length > 10) {
+          $scope.updateFeed.pop();
+        }
         if(!$scope.timeoutNotify && Notification && data.changed && data.changed.name === $scope.me && data.changed.changer !== data.changed.name) {
-          var notification = new Notification("Metapoints updated", { body: data.changed.changer + " " + data.changed.desc });
+          var notification = new Notification("Metapoints updated", { body: data.changed.changer + " " + data.changed.desc + " your metapoints by " + data.changed.amount });
           notification.onclick = function(e) {
             window.focus();
           };
@@ -48,7 +68,20 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout", "$htt
       });
     });
 
-    $scope.selectedPointSize = "01-default";
+    socket.on("error message", function(data) {
+      $rootScope.$apply(function() {
+        $scope.errorMsg = data.msg;
+        $timeout(function() {
+          $scope.errorMsg = null;
+        }, 5000);
+      });
+    });
+
+    $scope.upgradePowerLevel = function() {
+      socket.emit("increase power level");
+    };
+
+    $scope.selectedPointSize = "default";
 
     $http.get("/pointSizes").success(function(data, status, headers, config) {
       $scope.pointSizes = data;
@@ -72,18 +105,10 @@ app.controller("metapoints", ["$rootScope", "$scope", "$http", "$timeout", "$htt
 
     $scope.notificationsEnabled = Notification ? Notification.permission === "granted" : false;
 
-    $scope.inc = function(name) {
+    $scope.changeMetapoints = function(name, inc) {
       socket.emit("change metapoints", {
         name: name,
-        type: "inc",
-        size: $scope.selectedPointSize
-      });
-    };
-
-    $scope.dec = function(name) {
-      socket.emit("change metapoints", {
-        name: name,
-        type: "dec",
+        type: inc ? "inc" : "dec",
         size: $scope.selectedPointSize
       });
     };
