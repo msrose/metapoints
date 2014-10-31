@@ -83,32 +83,36 @@ if(!pointsFile) {
   }
 
   function changeMetapoints(name, type, requester, size) {
-    var person = findPersonBy("name", name);
+    if(name !== requester) {
+      console.log("Changing metapoints:", requester, "changes", name, type, size);
+      var person = findPersonBy("name", name);
 
-    var amount = getPointsAmount(size);
+      var amount = getPointsAmount(size);
 
-    if(person) {
-      var desc;
-      if(type === "inc") {
-        person.metapoints += amount;
-        desc = "increased";
-      } else {
-        person.metapoints -= amount;
-        desc = "decreased";
-      }
-      person.lastUpdatedBy = requester;
-      io.emit("update", {
-        people: cache.people,
-        changed: {
-          time: getCurrentTime(),
-          name: person.name,
-          changer: requester,
-          desc: desc,
-          amount: amount
+      if(person) {
+        var desc;
+        if(type === "inc") {
+          person.metapoints += amount;
+          desc = "increased";
+        } else {
+          person.metapoints -= amount;
+          desc = "decreased";
         }
-      });
-    } else {
-      console.error("Person not found!", name);
+        person.lastUpdatedBy = requester;
+        io.emit("update", {
+          people: cache.people,
+          changed: {
+            time: getCurrentTime(),
+            name: person.name,
+            changer: requester,
+            desc: desc,
+            amount: amount
+          }
+        });
+
+      } else {
+        console.error("Person not found!", name);
+      }
     }
   }
 
@@ -139,7 +143,6 @@ if(!pointsFile) {
 
     socket.on("change metapoints", function(data) {
       if(me && me.timeout === 0) {
-        console.log("Changing metapoints:", data);
         changeMetapoints(data.name, data.type, me.name, data.size);
         me.timeout = 10;
         socket.emit("timeout change", { timeout: me.timeout });

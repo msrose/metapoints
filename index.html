@@ -36,8 +36,8 @@
               <td class="align-right">{{p.metapoints}}</td>
               <td><span class="power-level" ng-if="p.powerLevel > 0" ng-repeat="level in getPowerArray(p.powerLevel)">{{level}}</span></td>
               <td class="{{timeout > 0 ? 'grayed-out' : ''}}">
-                <button class="action-btn" ng-click="changeMetapoints(p.name, true)" ng-disabled="timeout > 0">+</button>
-                <button class="action-btn" ng-click="changeMetapoints(p.name, false)" ng-disabled="timeout > 0">-</button>
+                <button class="action-btn" ng-click="changeMetapoints(p.name, true)" ng-disabled="timeout > 0" ng-show="p.name != me">+</button>
+                <button class="action-btn" ng-click="changeMetapoints(p.name, false)" ng-disabled="timeout > 0" ng-show="p.name != me">-</button>
               </td>
               <td>{{p.lastUpdatedBy}}</td>
             </tr>
