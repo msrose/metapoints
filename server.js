@@ -158,7 +158,20 @@ if(!pointsFile) {
           me.metapoints -= 1000;
           io.emit("update", cache);
         } else {
-          socket.emit("error message", { msg: "1000 metapoints required to upgrade power level" });
+          socket.emit("error message", { msg: "1000 metapoints required to upgrade power level." });
+        }
+      }
+    });
+
+    socket.on("cash-in power level", function() {
+      if(me) {
+        if(me.powerLevel > 0) {
+          console.log("Cashing in metapoints: ", me.name);
+          me.powerLevel--;
+          me.metapoints += 750;
+          io.emit("update", cache);
+        } else {
+          socket.emit("error message", { msg: "Not enough power levels." })
         }
       }
     });

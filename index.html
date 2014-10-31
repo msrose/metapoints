@@ -10,7 +10,7 @@
     <script src="notifications.js" type="text/javascript"></script>
     <script src="updateFeed.js" type="text/javascript"></script>
     <script src="error.js" type="text/javascript"></script>
-    <script src="spending.js" type="text/javascript"></script>
+    <script src="transactions.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
     <div class="metapoints">
@@ -34,7 +34,7 @@
               <td class="align-right">{{$index + 1}}</td>
               <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
               <td class="align-right">{{p.metapoints}}</td>
-              <td><span class="power-level" ng-if="p.powerLevel > 0" ng-repeat="level in getPowerArray(p.powerLevel)">{{level}}</span></td>
+              <td>{{p.powerLevel}}<br><span class="power-bar" style="width: {{p.powerBarSize}}%"></span></td>
               <td class="{{timeout > 0 ? 'grayed-out' : ''}}">
                 <button class="action-btn" ng-click="changeMetapoints(p.name, true)" ng-disabled="timeout > 0" ng-show="p.name != me">+</button>
                 <button class="action-btn" ng-click="changeMetapoints(p.name, false)" ng-disabled="timeout > 0" ng-show="p.name != me">-</button>
@@ -50,8 +50,9 @@
             </label>
           </div>
         </div>
-        <div class="spend" ng-controller="spending">
+        <div class="spend" ng-controller="transactions">
           Spend 1000 Metapoints: <button class="regular-btn" ng-click="upgradePowerLevel()">Upgrade Power Level</button>
+          Gain 750 Metapoints: <button class="regular-btn" ng-click="cashInPowerLevel()">Cash-In Power Level</button>
         </div>
         <div ng-controller="error">
           <p class="error" ng-if="!!errorMsg">{{errorMsg}}</p>
