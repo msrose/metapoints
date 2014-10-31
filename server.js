@@ -70,18 +70,6 @@ if(!pointsFile) {
     return 1;
   }
 
-  function decTimeout(person, socket) {
-    if(person.timeout > 0) {
-      person.timeout--;
-      if(socket) {
-        socket.emit("timeout change", { timeout: person.timeout });
-      }
-      setTimeout(function() {
-        decTimeout(person, socket);
-      }, 1000);
-    }
-  }
-
   function changeMetapoints(name, type, requester, size) {
     if(name !== requester) {
       console.log("Changing metapoints:", requester, "changes", name, type, size);
@@ -146,7 +134,12 @@ if(!pointsFile) {
         changeMetapoints(data.name, data.type, me.name, data.size);
         me.timeout = 10;
         socket.emit("timeout change", { timeout: me.timeout });
-        decTimeout(me, socket);
+        setTimeout(function() {
+          me.timeout = 0;
+          if(socket) {
+            socket.emit("timeout change", { timeout: me.timeout });
+          }
+        }, 10000);
       }
     });
 
