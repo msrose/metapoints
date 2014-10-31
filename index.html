@@ -30,7 +30,7 @@
               <th ng-show="timeout <= 0">&nbsp;</th>
               <th>Last Updated By</th>
             </tr>
-            <tr ng-repeat="p in pointsData | orderBy:'metapoints':true">
+            <tr ng-repeat="p in pointsData | orderBy:['powerLevel', 'metapoints']:true">
               <td class="align-right">{{$index + 1}}</td>
               <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
               <td class="align-right">{{p.metapoints}}</td>

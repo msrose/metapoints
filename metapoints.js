@@ -4,7 +4,7 @@ angular.module("metapoints").controller("metapoints", ["$scope", "$timeout", "so
   function($scope, $timeout, socket, pointSizes, notification) {
     $scope.getPowerArray = function(n) {
       var a = [];
-      for(var i = n - 9; i <= n; i++) {
+      for(var i = n - 4; i <= n; i++) {
         if(i > 0) {
           a.push(i);
         }
