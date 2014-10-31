@@ -182,8 +182,8 @@ if(!pointsFile) {
       } else if(req.url === "/" + pointsFile) {
         contentType = "json";
         useCache = true;
-      } else if(req.url === "/metapoints.js") {
-        file = "metapoints.js";
+      } else if(/.+\.js$/.test(req.url)) {
+        file = req.url.split("/")[1];
         contentType = "javascript";
       } else if(req.url === "/styles.css") {
         file = "styles.css";
