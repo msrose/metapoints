@@ -26,8 +26,8 @@
               <th>Name</th>
               <th>Metapoints</th>
               <th>Power Level</th>
-              <th ng-show="remainingTimeout > 0">{{remainingTimeout}}</th>
-              <th ng-show="remainingTimeout <= 0">&nbsp;</th>
+              <th ng-show="timeout > 0">{{timeout}}</th>
+              <th ng-show="timeout <= 0">&nbsp;</th>
               <th>Last Updated By</th>
             </tr>
             <tr ng-repeat="p in pointsData | orderBy:'metapoints':true">
@@ -35,9 +35,9 @@
               <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
               <td class="align-right">{{p.metapoints}}</td>
               <td><span class="power-level" ng-if="p.powerLevel > 0" ng-repeat="level in getPowerArray(p.powerLevel)">{{level}}</span></td>
-              <td class="{{timedOut ? 'grayed-out' : ''}}">
-                <button class="action-btn" ng-click="changeMetapoints(p.name, true)" ng-disabled="timedOut">+</button>
-                <button class="action-btn" ng-click="changeMetapoints(p.name, false)" ng-disabled="timedOut">-</button>
+              <td class="{{timeout > 0 ? 'grayed-out' : ''}}">
+                <button class="action-btn" ng-click="changeMetapoints(p.name, true)" ng-disabled="timeout > 0">+</button>
+                <button class="action-btn" ng-click="changeMetapoints(p.name, false)" ng-disabled="timeout > 0">-</button>
               </td>
               <td>{{p.lastUpdatedBy}}</td>
             </tr>

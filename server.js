@@ -70,6 +70,18 @@ if(!pointsFile) {
     return 1;
   }
 
+  function decTimeout(person, socket) {
+    if(person.timeout > 0) {
+      person.timeout--;
+      if(socket) {
+        socket.emit("timeout change", { timeout: person.timeout });
+      }
+      setTimeout(function() {
+        decTimeout(person, socket);
+      }, 1000);
+    }
+  }
+
   function changeMetapoints(name, type, requester, size) {
     var person = findPersonBy("name", name);
 
@@ -102,7 +114,7 @@ if(!pointsFile) {
 
   for(var i in cache.people) {
     cache.people[i].active = 0;
-    cache.people[i].timedOut = false;
+    cache.people[i].timeout = 0;
     if(!cache.people[i].powerLevel) {
       cache.people[i].powerLevel = 0;
     }
@@ -115,7 +127,8 @@ if(!pointsFile) {
     console.log("Socket connection established", ip);
 
     if(me) {
-      socket.emit("me data", { name: me.name, timedOut: me.timedOut });
+      socket.emit("me data", { name: me.name });
+      socket.emit("timeout change", { timeout: me.timeout });
       setActiveState(me, true);
     }
 
@@ -125,15 +138,12 @@ if(!pointsFile) {
     });
 
     socket.on("change metapoints", function(data) {
-      if(me && !me.timedOut) {
+      if(me && me.timeout === 0) {
         console.log("Changing metapoints:", data);
         changeMetapoints(data.name, data.type, me.name, data.size);
-        me.timedOut = true;
-        socket.emit("timeout change", { timedOut: true, duration: 10000 });
-        setTimeout(function() {
-          me.timedOut = false;
-          socket.emit("timeout change", { timedOut: false });
-        }, 10000);
+        me.timeout = 10;
+        socket.emit("timeout change", { timeout: me.timeout });
+        decTimeout(me, socket);
       }
     });
 
@@ -248,19 +258,8 @@ if(!pointsFile) {
             res.end("IP " + ip + " already registered");
           }
         } else {
-          if(!requester) {
-            res.writeHead(401, { "Content-Type": "text/plain" });
-            res.end("IP not registered");
-            return;
-          }
-
-          if(req.url === "/inc" || req.url === "/dec") {
-            res.writeHead(410, { "Content-Type": "text/plain" });
-            res.end("HTTP no longer supported for changing metapoints");
-          } else {
-            res.writeHead(404, { "Content-Type": "text/plain" });
-            res.end("Unknown request");
-          }
+          res.writeHead(404, { "Content-Type": "text/plain" });
+          res.end("Unknown request");
         }
       });
     }

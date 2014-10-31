@@ -30,23 +30,12 @@ angular.module("metapoints").controller("metapoints", ["$scope", "$timeout", "so
 
     socket.on("me data", function(data) {
       $scope.me = data.name;
-      $scope.timedOut = data.timedOut;
     });
 
-    $scope.remainingTimeout = 0;
+    $scope.timeout = 0;
 
     socket.on("timeout change", function(data) {
-      $scope.timedOut = data.timedOut;
-      if($scope.timedOut) {
-        $scope.remainingTimeout = data.duration / 1000;
-        var decRemainingTimeout = function() {
-          $scope.remainingTimeout--;
-          if($scope.remainingTimeout > 0) {
-            $timeout(decRemainingTimeout, 1000);
-          }
-        };
-        $timeout(decRemainingTimeout, 1000);
-      }
+      $scope.timeout = data.timeout;
     });
 
     $scope.selectedPointSize = pointSizes.defaultPointSize;
