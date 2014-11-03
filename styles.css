@@ -1,11 +1,21 @@
 html {
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   font-family: "Segoe UI", sans-serif;
   height: 100%;
   background-color: lightblue;
+  padding: 0;
+  margin: 0;
+}
+
+.content {
+  width: 750px;
+  margin: 0 auto;
+  padding: 0 30px;
 }
 
 table {
@@ -25,12 +35,8 @@ th {
 
 h1 {
   width: 50%;
-}
-
-.register, .metapoints {
-  width: 750px;
-  margin: 0 auto;
-  padding: 0 30px;
+  margin: 0;
+  margin-bottom: 20px;
 }
 
 .register .submit {
@@ -58,19 +64,6 @@ h1 {
   text-align: right;
 }
 
-.point-sizes {
-  overflow: hidden;
-}
-
-.point-sizes .size-option {
-  float: left;
-  margin-left: 15px;
-}
-
-.point-sizes .caption {
-  float: left;
-}
-
 .grayed-out {
   background-color: lightgray;
 }
@@ -89,6 +82,33 @@ h1 {
   color: red;
 }
 
-.wrapper {
-  clear: both;
+.point-changes {
+  margin: 20px 0;
+}
+
+.point-changes .group {
+  float: left;
+  margin-right: 20px;
+}
+
+.transactions {
+  float: left;
+  border-right: 1px dotted gray;
+  height: 100%;
+  padding: 5px 10px;
+  margin: 0;
+}
+
+.transactions .group {
+  margin-bottom: 20px;
+}
+
+.transactions h2 {
+  margin: 0 0 20px 0;
+}
+
+.transactions .collapse-toggle {
+  float: right;
+  font-size: 30px;
+  line-height: 25px;
 }

@@ -5,6 +5,8 @@
     <link rel="stylesheet" type="text/css" href="styles.css" />
     <script src="https://cdn.socket.io/socket.io-1.1.0.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js" type="text/javascript"></script>
+    <script src="app.js" type="text/javascript"></script>
+    <script src="pointsTable.js" type="text/javascript"></script>
     <script src="metapoints.js" type="text/javascript"></script>
     <script src="factories.js" type="text/javascript"></script>
     <script src="notifications.js" type="text/javascript"></script>
@@ -13,55 +15,50 @@
     <script src="transactions.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
-    <div class="metapoints">
+    <div class="transactions" ng-controller="transactions" style="width: {{ collapsed ? 20 : 200 }}px">
+      <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
+      <div ng-if="!collapsed">
+        <h2>Store</h2>
+        <div class="group">Spend 1000 Metapoints: <button class="regular-btn" ng-click="upgradePowerLevel()">Upgrade Power Level</button></div>
+        <div class="group">Gain 750 Metapoints: <button class="regular-btn" ng-click="cashInPowerLevel()">Cash-In Power Level</button></div>
+      </div>
+    </div>
+    <div class="content">
       <div ng-controller="notifications">
         <button id="enable_notify" class="regular-btn" ng-click="enableNotifications()" ng-if="!notificationsEnabled">Enable Notifications</button>
       </div>
       <h1>Metapoints</h1>
-      <div class="wrapper">
-        <div ng-controller="metapoints">
-          <table>
-            <tr>
-              <th>Rank</th>
-              <th>Name</th>
-              <th>Metapoints</th>
-              <th>Power Level</th>
-              <th ng-show="timeout > 0">{{timeout}}</th>
-              <th ng-show="timeout <= 0">&nbsp;</th>
-              <th>Last Updated By</th>
-            </tr>
-            <tr ng-repeat="p in pointsData | orderBy:['powerLevel', 'metapoints']:true">
-              <td class="align-right">{{$index + 1}}</td>
-              <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
-              <td class="align-right">{{p.metapoints}}</td>
-              <td>{{p.powerLevel}}<br><span class="power-bar" style="width: {{p.powerBarSize}}%"></span></td>
-              <td class="{{timeout > 0 ? 'grayed-out' : ''}}">
-                <button class="action-btn" ng-click="changeMetapoints(p.name, true)" ng-disabled="timeout > 0" ng-show="p.name != me">+</button>
-                <button class="action-btn" ng-click="changeMetapoints(p.name, false)" ng-disabled="timeout > 0" ng-show="p.name != me">-</button>
-              </td>
-              <td>{{p.lastUpdatedBy}}</td>
-            </tr>
-          </table>
-          <div class="point-sizes">
-            <span class="caption">Point Magnitude</span>
-            <label ng-repeat="size in pointSizes | orderBy:'value'" class="size-option">
-              {{size.value}}
-              <input type="radio" ng-model="$parent.selectedPointSize" ng-value="size.name" name="pointSize">
-            </label>
-          </div>
-        </div>
-        <div class="spend" ng-controller="transactions">
-          Spend 1000 Metapoints: <button class="regular-btn" ng-click="upgradePowerLevel()">Upgrade Power Level</button>
-          Gain 750 Metapoints: <button class="regular-btn" ng-click="cashInPowerLevel()">Cash-In Power Level</button>
-        </div>
-        <div ng-controller="error">
-          <p class="error" ng-if="!!errorMsg">{{errorMsg}}</p>
-        </div>
-        <div class="update-feed" ng-controller="updateFeed">
-          <ul>
-            <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}}</li>
-          </ul>
-        </div>
+      <div ng-controller="pointsTable">
+        <table>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Metapoints</th>
+            <th>Power Level</th>
+            <th>Last Updated By</th>
+          </tr>
+          <tr ng-repeat="p in pointsData | orderBy:['powerLevel', 'metapoints']:true">
+            <td class="align-right">{{$index + 1}}</td>
+            <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
+            <td class="align-right">{{p.metapoints}}</td>
+            <td>{{p.powerLevel}}<br><span class="power-bar" style="width: {{p.powerBarSize}}%"></span></td>
+            <td>{{p.lastUpdatedBy}}</td>
+          </tr>
+        </table>
+      </div>
+      <div class="point-changes" ng-controller="metapoints">
+        <div class="group">Point Magnitude: <select ng-model="selectedPointSize" ng-options="size.name as size.value for size in pointSizes | orderBy:'value'"></select></div>
+        <div class="group">Name: <select ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select></div>
+        <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
+        <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
+      </div>
+      <div ng-controller="error">
+        <p class="error" ng-if="!!errorMsg">{{errorMsg}}</p>
+      </div>
+      <div class="update-feed" ng-controller="updateFeed">
+        <ul>
+          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}}</li>
+        </ul>
       </div>
     </div>
   </body>

@@ -1,39 +1,15 @@
-angular.module("metapoints", []);
-
-angular.module("metapoints").controller("metapoints", ["$scope", "$timeout", "socket", "pointSizes", "notification",
-  function($scope, $timeout, socket, pointSizes, notification) {
-    socket.on("update", function(data) {
-      $scope.pointsData = data.people;
-
-      var maxPowerLevel = 0;
-      for(var i in $scope.pointsData) {
-        var level = $scope.pointsData[i].powerLevel;
-        if(level > maxPowerLevel) {
-          maxPowerLevel = level;
-        }
-      }
-
-      for(var i in $scope.pointsData) {
-        var person = $scope.pointsData[i];
-        person.powerBarSize = parseInt(person.powerLevel / maxPowerLevel * 100);
-      }
-
-      if(!notification.timedOut() && data.changed && data.changed.name === $scope.me) {
-        notification.notify({
-          title: "Metapoints updated",
-          body: data.changed.changer + " " + data.changed.desc + " your metapoints by " + data.changed.amount,
-          dismiss: 15000,
-          timeout: 30000
-        }, function(notification) {
-            notification.onclick = function(e) {
-              window.focus();
-            };
-        });
-      }
-    });
-
+angular.module("metapoints").controller("metapoints", ["$scope", "socket", "pointSizes",
+  function($scope, socket, pointSizes) {
     socket.on("me data", function(data) {
       $scope.me = data.name;
+    });
+
+    socket.on("update", function(data) {
+      $scope.pointsData = data.people;
+      $scope.selectedName = $scope.selectedName || $scope.me;
+      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === $scope.me; i++) {
+        $scope.selectedName = $scope.pointsData[i].name;
+      }
     });
 
     $scope.timeout = 0;
@@ -47,9 +23,9 @@ angular.module("metapoints").controller("metapoints", ["$scope", "$timeout", "so
       $scope.pointSizes = data;
     });
 
-    $scope.changeMetapoints = function(name, inc) {
+    $scope.changeMetapoints = function(inc) {
       socket.emit("change metapoints", {
-        name: name,
+        name: $scope.selectedName,
         type: inc ? "inc" : "dec",
         size: $scope.selectedPointSize
       });
