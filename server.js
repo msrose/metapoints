@@ -2,6 +2,7 @@ var http = require('http');
 var fs = require('fs');
 var qs = require('querystring');
 var socket = require('socket.io');
+var request = require('request');
 
 var configFile = process.argv[2] || "config.json";
 var config = JSON.parse(fs.readFileSync(configFile));
@@ -11,6 +12,7 @@ var saveFreqInMins = config.saveFreqInMins || 5;
 var ip = config.host || "localhost";
 var port = config.port || 1338;
 var authQuestions = JSON.parse(fs.readFileSync(config.authQuestionsFile || "authquestions.json")).questions;
+var subscribers = config.subscribers || [];
 
 var cache = null;
 
@@ -50,6 +52,22 @@ function getCurrentTime() {
   return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function(x) {
     return x < 10 ? "0" + x : x
   }).join(":");
+}
+
+function timeoutPerson(person, socket, timeout) {
+  person.timeout = timeout;
+  setAuthQuestion(person, socket);
+  setTimeout(function() {
+    person.timeout = 0;
+    if(socket) {
+      socket.emit("timeout change", { timeout: person.timeout });
+    }
+  }, timeout * 1000);
+}
+
+function setAuthQuestion(person, socket) {
+  person.authQuestion = parseInt(Math.random() * authQuestions.length);
+  socket.emit("timeout change", { timeout: person.timeout, auth: authQuestions[person.authQuestion].text });
 }
 
 var pointsAmounts = [
@@ -120,8 +138,7 @@ io.on("connection", function(socket) {
 
   if(me) {
     socket.emit("me data", { name: me.name });
-    me.authQuestion = parseInt(Math.random() * authQuestions.length);
-    socket.emit("timeout change", { timeout: me.timeout, auth: authQuestions[me.authQuestion].text });
+    setAuthQuestion(me, socket);
     setActiveState(me, true);
   }
 
@@ -131,19 +148,16 @@ io.on("connection", function(socket) {
   });
 
   socket.on("change metapoints", function(data) {
-    if(me && me.timeout === 0 && data.authAnswer && data.authAnswer.trim().toUpperCase() === authQuestions[me.authQuestion].answer.toUpperCase()) {
-      changeMetapoints(data.name, data.type, me.name, data.size);
-      me.timeout = 10;
-      me.authQuestion = parseInt(Math.random() * authQuestions.length);
-      socket.emit("timeout change", { timeout: me.timeout, auth: authQuestions[me.authQuestion].text });
-      setTimeout(function() {
-        me.timeout = 0;
-        if(socket) {
-          socket.emit("timeout change", { timeout: me.timeout });
-        }
-      }, 10000);
+    if(me && me.timeout === 0) {
+      if(data.authAnswer && data.authAnswer.trim().toUpperCase() === authQuestions[me.authQuestion].answer.toUpperCase()) {
+        changeMetapoints(data.name, data.type, me.name, data.size);
+        timeoutPerson(me, socket, 10);
+      } else {
+        timeoutPerson(me, socket, 60);
+        socket.emit("error message", { msg: "Incorrect auth answer." });
+      }
     } else {
-      socket.emit("error message", { msg: "Error updating metapoints." });
+      socket.emit("error message", { msg: "You are timed out." });
     }
   });
 
@@ -287,5 +301,25 @@ setInterval(function() {
     } else {
       console.log("Cached data saved to", pointsFile);
     }
-  })
+  });
+
+  var lastStandingsPost = "";
+  var text = "Current standings:\n";
+  for(var i in cache.people) {
+    text += cache.people[i].name + ": " + cache.people[i].metapoints + ", ";
+  }
+
+  if(text !== lastStandingsPost) {
+    subscribers.forEach(function(subscriber) {
+      request.post(subscriber.postUrl, { json: { text: text } }, function(err, res) {
+        if(err) {
+          return console.error("Error posting to", subscriber.name);
+        }
+        console.log("Posting to", subscriber.name, res.statusCode);
+        lastStandingsPost = text;
+      });
+    });
+  } else {
+    console.log("No changes since last post to subscribers.");
+  }
 }, saveFreqInMins * 60 * 1000);
