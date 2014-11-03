@@ -1,4 +1,4 @@
-var app = angular.module("metapoints")
+var app = angular.module("metapoints");
 
 app.factory("socket", ["$rootScope",
   function($rootScope) {
@@ -17,7 +17,7 @@ app.factory("socket", ["$rootScope",
       }
     };
   }
-])
+]);
 
 app.factory("pointSizes", ["$http",
   function($http) {

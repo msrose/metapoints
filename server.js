@@ -150,7 +150,7 @@ io.on("connection", function(socket) {
   socket.on("increase power level", function() {
     if(me) {
       if(me.metapoints >= 1000) {
-        console.log("Increasing power level:", me.name);
+        console.log("Increasing power level:", me.name, me.powerLevel + 1);
         me.powerLevel++;
         me.metapoints -= 1000;
         io.emit("update", cache);
@@ -163,7 +163,7 @@ io.on("connection", function(socket) {
   socket.on("cash-in power level", function() {
     if(me) {
       if(me.powerLevel > 0) {
-        console.log("Cashing in metapoints: ", me.name);
+        console.log("Cashing in powerlevel: ", me.name, me.powerLevel - 1);
         me.powerLevel--;
         me.metapoints += 750;
         io.emit("update", cache);
