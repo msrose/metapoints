@@ -294,6 +294,8 @@ function serverHandler(req, res) {
 
 console.log("Server running at " + ip + ":" + port);
 
+var lastStandingsPost = "";
+
 setInterval(function() {
   fs.writeFile(pointsFile, JSON.stringify(cache), function(err) {
     if(err) {
@@ -303,7 +305,6 @@ setInterval(function() {
     }
   });
 
-  var lastStandingsPost = "";
   var text = "Current standings:\n";
   for(var i in cache.people) {
     text += cache.people[i].name + ": " + cache.people[i].metapoints + ", ";
