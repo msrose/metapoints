@@ -24,6 +24,7 @@ if(!pointsFile) {
   var saveFreqInMins = parseInt(process.argv[3]) || 5;
   var ip = process.argv[4] || "localhost";
   var port = parseInt(process.argv[5]) || 1338;
+  var authQuestions = JSON.parse(fs.readFileSync(process.argv[6] || "authquestions.json")).questions;
 
   var server = http.createServer(serverHandler).listen(port, ip);
 
@@ -120,7 +121,8 @@ if(!pointsFile) {
 
     if(me) {
       socket.emit("me data", { name: me.name });
-      socket.emit("timeout change", { timeout: me.timeout });
+      me.authQuestion = parseInt(Math.random() * authQuestions.length);
+      socket.emit("timeout change", { timeout: me.timeout, auth: authQuestions[me.authQuestion].text });
       setActiveState(me, true);
     }
 
@@ -130,16 +132,19 @@ if(!pointsFile) {
     });
 
     socket.on("change metapoints", function(data) {
-      if(me && me.timeout === 0) {
+      if(me && me.timeout === 0 && data.authAnswer && data.authAnswer.trim().toUpperCase() === authQuestions[me.authQuestion].answer.toUpperCase()) {
         changeMetapoints(data.name, data.type, me.name, data.size);
         me.timeout = 10;
-        socket.emit("timeout change", { timeout: me.timeout });
+        me.authQuestion = parseInt(Math.random() * authQuestions.length);
+        socket.emit("timeout change", { timeout: me.timeout, auth: authQuestions[me.authQuestion].text });
         setTimeout(function() {
           me.timeout = 0;
           if(socket) {
             socket.emit("timeout change", { timeout: me.timeout });
           }
         }, 10000);
+      } else {
+        socket.emit("error message", { msg: "Error updating metapoints." });
       }
     });
 

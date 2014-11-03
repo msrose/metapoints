@@ -49,8 +49,13 @@
       <div class="point-changes" ng-controller="metapoints">
         <div class="group">Point Magnitude: <select ng-model="selectedPointSize" ng-options="size.name as size.value for size in pointSizes | orderBy:'value'"></select></div>
         <div class="group">Name: <select ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select></div>
-        <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
-        <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
+        <div class="group">
+          <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
+          <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
+        </div>
+        <div class="group">
+          {{authQuestion}} <input type="text" ng-model="authAnswer">
+        </div>
       </div>
       <div ng-controller="error">
         <p class="error" ng-if="!!errorMsg">{{errorMsg}}</p>

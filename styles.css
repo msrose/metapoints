@@ -84,6 +84,8 @@ h1 {
 
 .point-changes {
   margin: 20px 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .point-changes .group {

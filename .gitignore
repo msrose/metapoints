@@ -3,3 +3,4 @@ config.json
 *.swp
 *.log
 node_modules
+authquestions.json
