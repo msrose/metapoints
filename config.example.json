@@ -1,0 +1,7 @@
+{
+  "pointsFile": "points.json",
+  "saveFreqInMins": 5,
+  "host": "localhost",
+  "port": 1338,
+  "authQuestionsFile": "authquestions.json"
+}

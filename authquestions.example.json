@@ -1,0 +1,12 @@
+{
+  "questions": [
+    {
+      "text": "Is this an easy example question?",
+      "answer": "Yes"
+    },
+    {
+      "text": "What is the average wind speed velocity of a laden swallow?",
+      "answer": "African or European?"
+    }
+  ]
+}
