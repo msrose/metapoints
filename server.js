@@ -70,6 +70,10 @@ function setAuthQuestion(person, socket) {
   socket.emit("timeout change", { timeout: person.timeout, auth: authQuestions[person.authQuestion].text });
 }
 
+function sanitizeAuthInput(input) {
+  return input.trim().toUpperCase().split(/[^\w]/).join("");
+}
+
 var pointsAmounts = [
   { name: "xxlarge", value: 100 },
   { name: "xlarge", value: 50 },
@@ -149,11 +153,12 @@ io.on("connection", function(socket) {
 
   socket.on("change metapoints", function(data) {
     if(me && me.timeout === 0) {
-      if(data.authAnswer && data.authAnswer.trim().toUpperCase() === authQuestions[me.authQuestion].answer.toUpperCase()) {
+      if(data.authAnswer && sanitizeAuthInput(data.authAnswer) === sanitizeAuthInput(authQuestions[me.authQuestion].answer)) {
         changeMetapoints(data.name, data.type, me.name, data.size);
         timeoutPerson(me, socket, 10);
       } else {
         timeoutPerson(me, socket, 60);
+        console.log("Incorrect auth answer by ", me.name, data.authAnswer);
         socket.emit("error message", { msg: "Incorrect auth answer." });
       }
     } else {
