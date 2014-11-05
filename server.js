@@ -4,6 +4,8 @@ var qs = require('querystring');
 var socket = require('socket.io');
 var request = require('request');
 
+var util = require('./util');
+
 var configFile = process.argv[2] || "config.json";
 var config = JSON.parse(fs.readFileSync(configFile));
 
@@ -47,13 +49,6 @@ function setActiveState(person, active) {
   }
 }
 
-function getCurrentTime() {
-  var d = new Date();
-  return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function(x) {
-    return x < 10 ? "0" + x : x
-  }).join(":");
-}
-
 function timeoutPerson(person, socket, timeout) {
   person.timeout = timeout;
   setAuthQuestion(person, socket);
@@ -70,34 +65,12 @@ function setAuthQuestion(person, socket) {
   socket.emit("timeout change", { timeout: person.timeout, auth: authQuestions[person.authQuestion].text });
 }
 
-function sanitizeAuthInput(input) {
-  return input.trim().toUpperCase().split(/[^\w]/).join("");
-}
-
-var pointsAmounts = [
-  { name: "xxlarge", value: 100 },
-  { name: "xlarge", value: 50 },
-  { name: "large", value: 25 },
-  { name: "medium", value: 10 },
-  { name: "small", value: 5 },
-  { name: "default", value: 1 }
-];
-
-function getPointsAmount(size) {
-  for(var i in pointsAmounts) {
-    if(pointsAmounts[i].name === size) {
-      return pointsAmounts[i].value;
-    }
-  }
-  return 1;
-}
-
 function changeMetapoints(name, type, requester, size) {
   if(name !== requester) {
     console.log("Changing metapoints:", requester, "changes", name, type, size);
     var person = findPersonBy("name", name);
 
-    var amount = getPointsAmount(size);
+    var amount = util.getPointsAmount(size);
 
     if(person) {
       var desc;
@@ -112,7 +85,7 @@ function changeMetapoints(name, type, requester, size) {
       io.emit("update", {
         people: cache.people,
         changed: {
-          time: getCurrentTime(),
+          time: util.getCurrentTime(),
           name: person.name,
           changer: requester,
           desc: desc,
@@ -153,7 +126,7 @@ io.on("connection", function(socket) {
 
   socket.on("change metapoints", function(data) {
     if(me && me.timeout === 0) {
-      if(data.authAnswer && sanitizeAuthInput(data.authAnswer) === sanitizeAuthInput(authQuestions[me.authQuestion].answer)) {
+      if(data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === util.sanitizeAuthInput(authQuestions[me.authQuestion].answer)) {
         changeMetapoints(data.name, data.type, me.name, data.size);
         timeoutPerson(me, socket, 10);
       } else {
@@ -232,7 +205,7 @@ function serverHandler(req, res) {
       contentType = "css";
     } else if(req.url === "/pointSizes") {
       res.writeHead(200, { "Content-Type": "text/json" });
-      res.end(JSON.stringify(pointsAmounts));
+      res.end(JSON.stringify(util.getPointsAmounts()));
       return;
     } else {
       res.writeHead(404, { "Content-Type": "text/plain" });
