@@ -7,29 +7,24 @@ var request = require('request');
 var util = require('./util');
 
 var configFile = process.argv[2] || "config.json";
-var config = JSON.parse(fs.readFileSync(configFile));
 
-var pointsFile = config.pointsFile || "points.json";
-var saveFreqInMins = config.saveFreqInMins || 5;
-var ip = config.host || "localhost";
-var port = config.port || 1338;
-var authQuestions = JSON.parse(fs.readFileSync(config.authQuestionsFile || "authquestions.json")).questions;
-var subscribers = config.subscribers || [];
+var config = require('./config')(configFile, {
+  pointsFile: "points.json",
+  saveFreqInMins: 5,
+  host: "localhost",
+  port: 1338,
+  authQuestionsFile: "./authquestions.json",
+  subscribers: []
+});
 
-var cache = null;
+var authQuestions = require(config.authQuestionsFile).questions;
 
-var pointsData = fs.readFileSync(pointsFile, "utf8");
-if(pointsData) {
-  cache = JSON.parse(pointsData);
-} else {
-  cache = {};
-}
-
+var cache = require(config.pointsFile);
 if(!cache.people) {
   cache.people = [];
 }
 
-var server = http.createServer(serverHandler).listen(port, ip);
+var server = http.createServer(serverHandler).listen(config.port, config.host);
 
 var io = socket(server);
 
@@ -194,7 +189,7 @@ function serverHandler(req, res) {
         file = "register.html";
         contentType = "html";
       }
-    } else if(req.url === "/" + pointsFile) {
+    } else if(req.url === "/" + config.pointsFile) {
       contentType = "json";
       useCache = true;
     } else if(/.+\.js$/.test(req.url)) {
@@ -270,16 +265,16 @@ function serverHandler(req, res) {
   }
 }
 
-console.log("Server running at " + ip + ":" + port);
+console.log("Server running at " + config.host + ":" + config.port);
 
 var lastStandingsPost = "";
 
 setInterval(function() {
-  fs.writeFile(pointsFile, JSON.stringify(cache), function(err) {
+  fs.writeFile(config.pointsFile, JSON.stringify(cache), function(err) {
     if(err) {
       console.error("Error saving data:", err);
     } else {
-      console.log("Cached data saved to", pointsFile);
+      console.log("Cached data saved to", config.pointsFile);
     }
   });
 
@@ -289,7 +284,7 @@ setInterval(function() {
   }
 
   if(text !== lastStandingsPost) {
-    subscribers.forEach(function(subscriber) {
+    config.subscribers.forEach(function(subscriber) {
       request.post(subscriber.postUrl, { json: { text: text } }, function(err, res) {
         if(err) {
           return console.error("Error posting to", subscriber.name);
@@ -301,4 +296,4 @@ setInterval(function() {
   } else {
     console.log("No changes since last post to subscribers.");
   }
-}, saveFreqInMins * 60 * 1000);
+}, config.saveFreqInMins * 60 * 1000);
