@@ -3,7 +3,7 @@ module.exports = function(configFile, defaults) {
 
   for(var prop in defaults) {
     if(!config[prop]) {
-      config[prop] = config[defaults];
+      config[prop] = defaults[prop];
     }
   }
 

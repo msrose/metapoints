@@ -9,7 +9,7 @@ var util = require('./util');
 var configFile = process.argv[2] || "config.json";
 
 var config = require('./config')(configFile, {
-  pointsFile: "points.json",
+  pointsFile: "./points.json",
   saveFreqInMins: 5,
   host: "localhost",
   port: 1338,
