@@ -3,5 +3,11 @@
   "saveFreqInMins": 5,
   "host": "localhost",
   "port": 1338,
-  "authQuestionsFile": "authquestions.json"
+  "authQuestionsFile": "authquestions.json",
+  "subscribers": [
+    {
+      "name": "Example subscriber name",
+      "postUrl": "http://example.com"
+    }
+  ]
 }

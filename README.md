@@ -13,8 +13,9 @@ Install [nodejs](http://nodejs.org/).
 ```
 $ git clone https://github.com/msrose/metapoints metapoints
 $ cd !$
-$ touch points.json
-$ node server.js [configFile]
+$ cp config.example.json config.json
+$ cp authquestions.example.json authquestions.json
+$ node server.js
 ```
 
 Visit [http://localhost:1338/](http://localhost:1338/) to start getting meta.
