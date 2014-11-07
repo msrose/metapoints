@@ -14,8 +14,12 @@ exports.getCurrentTime = function() {
   }).join(":");
 };
 
+var excludedWords = ["THE", "A"];
+
 exports.sanitizeAuthInput = function(input) {
-  return input.trim().toUpperCase().split(/[^\w]/).join("");
+  return input.trim().toUpperCase().split(/[^\w]/).filter(function(word) {
+    return excludedWords.indexOf(word) === -1;
+  }).join("");
 };
 
 exports.getPointsAmounts = function() {

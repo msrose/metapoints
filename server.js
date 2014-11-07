@@ -17,7 +17,11 @@ var config = require('./config')(configFile, {
   subscribers: []
 });
 
-var authQuestions = require(config.authQuestionsFile).questions;
+var authQuestions = require(config.authQuestionsFile).questions
+
+authQuestions.forEach(function(question) {
+  question.answer = util.sanitizeAuthInput(question.answer);
+});
 
 var cache = require(config.pointsFile);
 if(!cache.people) {
@@ -97,9 +101,6 @@ function changeMetapoints(name, type, requester, size) {
 for(var i in cache.people) {
   cache.people[i].active = 0;
   cache.people[i].timeout = 0;
-  if(!cache.people[i].powerLevel) {
-    cache.people[i].powerLevel = 0;
-  }
 }
 
 io.on("connection", function(socket) {
@@ -121,7 +122,7 @@ io.on("connection", function(socket) {
 
   socket.on("change metapoints", function(data) {
     if(me && me.timeout === 0) {
-      if(data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === util.sanitizeAuthInput(authQuestions[me.authQuestion].answer)) {
+      if(data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
         changeMetapoints(data.name, data.type, me.name, data.size);
         timeoutPerson(me, socket, 10);
       } else {
@@ -236,7 +237,7 @@ function serverHandler(req, res) {
     req.on("end", function() {
       if(req.url === "/register") {
         if(!requester) {
-          var name = qs.parse(body).name.split(" ").join("");
+          var name = qs.parse(body).name.split(/[^\w]/).join("");
           if(!name) {
             res.writeHead(400, { "Content-Type": "text/plain" });
             res.end("Invalid name provided");
@@ -248,7 +249,7 @@ function serverHandler(req, res) {
               }
             }
 
-            cache.people.push({ name: name, ip: ip, metapoints: 0, active: 0, powerLevel: 0 });
+            cache.people.push({ name: name, ip: ip, metapoints: 0, active: 0, powerLevel: 0, timeout: 0 });
             io.emit("update", cache);
             res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
             res.end("Registered " + body + " at " + ip);
@@ -278,7 +279,7 @@ setInterval(function() {
     }
   });
 
-  var text = "Current standings:\n";
+  var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
   for(var i in cache.people) {
     text += cache.people[i].name + ": " + cache.people[i].metapoints + ", ";
   }
