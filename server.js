@@ -26,8 +26,8 @@ authQuestions.forEach(function(question) {
 
 var people = db(config.pointsFile, {
   required: ["ip", "name"],
-  optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0 },
-  persist: ["ip", "name", "metapoints", "powerLevel"]
+  optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null },
+  persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy"]
 }, function(err) {
   console.error("Failed to init filedb:", err);
 });
@@ -77,7 +77,7 @@ function changeMetapoints(name, type, requester, size) {
       }
       person.lastUpdatedBy = requester;
       io.emit("update", {
-        people: people.all(),
+        collection: people.all().collection,
         changed: {
           time: util.getCurrentTime(),
           name: person.name,
@@ -272,7 +272,7 @@ setInterval(function() {
     console.log("Data saved to", config.pointsFile);
   });
 
-  if(subscribers.length > 0) {
+  if(config.subscribers.length > 0) {
     var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
     var infoList = [];
     people.all().collection.forEach(function(person) {
