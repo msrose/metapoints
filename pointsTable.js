@@ -1,7 +1,7 @@
 angular.module("metapoints").controller("pointsTable", ["$scope", "socket",
   function($scope, socket) {
     socket.on("update", function(data) {
-      $scope.pointsData = data.people;
+      $scope.pointsData = data.collection;
 
       var maxPowerLevel = 0;
       for(var i in $scope.pointsData) {

@@ -4,6 +4,7 @@ var qs = require('querystring');
 var socket = require('socket.io');
 var request = require('request');
 
+var db = require('./filedb');
 var util = require('./util');
 
 var configFile = process.argv[2] || "config.json";
@@ -17,34 +18,28 @@ var config = require('./config')(configFile, {
   subscribers: []
 });
 
-var authQuestions = require(config.authQuestionsFile).questions
+var authQuestions = require(config.authQuestionsFile).questions;
 
 authQuestions.forEach(function(question) {
   question.answer = util.sanitizeAuthInput(question.answer);
 });
 
-var cache = require(config.pointsFile);
-if(!cache.people) {
-  cache.people = [];
-}
+var people = db(config.pointsFile, {
+  required: ["ip", "name"],
+  optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0 },
+  persist: ["ip", "name", "metapoints", "powerLevel"]
+}, function(err) {
+  console.error("Failed to init filedb:", err);
+});
 
 var server = http.createServer(serverHandler).listen(config.port, config.host);
 
 var io = socket(server);
 
-function findPersonBy(prop, val) {
-  for(var i in cache.people) {
-    if(cache.people[i][prop] === val) {
-      return cache.people[i];
-    }
-  }
-  return null;
-}
-
 function setActiveState(person, active) {
   if(person) {
     person.active += active ? 1 : -1;
-    io.emit("update", cache);
+    io.emit("update", people.all());
   }
 }
 
@@ -67,7 +62,7 @@ function setAuthQuestion(person, socket) {
 function changeMetapoints(name, type, requester, size) {
   if(name !== requester) {
     console.log("Changing metapoints:", requester, "changes", name, type, size);
-    var person = findPersonBy("name", name);
+    var person = people.findBy("name", name);
 
     var amount = util.getPointsAmount(size);
 
@@ -82,7 +77,7 @@ function changeMetapoints(name, type, requester, size) {
       }
       person.lastUpdatedBy = requester;
       io.emit("update", {
-        people: cache.people,
+        people: people.all(),
         changed: {
           time: util.getCurrentTime(),
           name: person.name,
@@ -98,14 +93,9 @@ function changeMetapoints(name, type, requester, size) {
   }
 }
 
-for(var i in cache.people) {
-  cache.people[i].active = 0;
-  cache.people[i].timeout = 0;
-}
-
 io.on("connection", function(socket) {
   var ip = socket.handshake.address;
-  var me = findPersonBy("ip", ip);
+  var me = people.findBy("ip", ip);
 
   console.log("Socket connection established", ip);
 
@@ -141,7 +131,7 @@ io.on("connection", function(socket) {
         console.log("Increasing power level:", me.name, me.powerLevel + 1);
         me.powerLevel++;
         me.metapoints -= 1000;
-        io.emit("update", cache);
+        io.emit("update", people.all());
       } else {
         socket.emit("error message", { msg: "1000 metapoints required to upgrade power level." });
       }
@@ -154,7 +144,7 @@ io.on("connection", function(socket) {
         console.log("Cashing in powerlevel: ", me.name, me.powerLevel - 1);
         me.powerLevel--;
         me.metapoints += 750;
-        io.emit("update", cache);
+        io.emit("update", people.all());
       } else {
         socket.emit("error message", { msg: "Not enough power levels." })
       }
@@ -166,7 +156,7 @@ function serverHandler(req, res) {
   console.log("Request made: ", req.method, req.connection.remoteAddress, req.url);
 
   var ip = req.connection.remoteAddress;
-  var requester = findPersonBy("ip", ip);
+  var requester = people.findBy("ip", ip);
 
   if(req.method === "GET") {
     var file = "";
@@ -211,7 +201,7 @@ function serverHandler(req, res) {
 
     res.writeHead(200, { "Content-Type": "text/" + contentType });
     if(useCache) {
-      res.end(JSON.stringify(cache));
+      res.end(JSON.stringify(people.all()));
     } else {
       fs.readFile(file, "utf8", function(err, data) {
         if(err) {
@@ -242,17 +232,21 @@ function serverHandler(req, res) {
             res.writeHead(400, { "Content-Type": "text/plain" });
             res.end("Invalid name provided");
           } else {
-            for(var i in cache.people) {
-              if(cache.people[i].name === name) {
-                res.writeHead(412, { "Content-Type": "text/plain" });
-                return res.end("Name " + body + " already taken");
-              }
+            if(people.findBy("name", name) !== null) {
+              res.writeHead(412, { "Content-Type": "text/plain" });
+              return res.end("Name " + body + " already taken");
             }
 
-            cache.people.push({ name: name, ip: ip, metapoints: 0, active: 0, powerLevel: 0, timeout: 0 });
-            io.emit("update", cache);
-            res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
-            res.end("Registered " + body + " at " + ip);
+            people.add({ name: name, ip: ip }, function(err) {
+              if(err) {
+                console.error("Could not add person: ", err);
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                return res.end("Could not register new person.");
+              }
+              io.emit("update", people.all());
+              res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
+              res.end("Registered " + body + " at " + ip);
+            });
           }
         } else {
           res.writeHead(412, { "Content-Type": "text/plain" });
@@ -271,30 +265,33 @@ console.log("Server running at " + config.host + ":" + config.port);
 var lastStandingsPost = "";
 
 setInterval(function() {
-  fs.writeFile(config.pointsFile, JSON.stringify(cache), function(err) {
+  people.save(function(err) {
     if(err) {
-      console.error("Error saving data:", err);
-    } else {
-      console.log("Cached data saved to", config.pointsFile);
+      return console.error("Error saving data:", err);
     }
+    console.log("Data saved to", config.pointsFile);
   });
 
-  var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
-  for(var i in cache.people) {
-    text += cache.people[i].name + ": " + cache.people[i].metapoints + ", ";
-  }
-
-  if(text !== lastStandingsPost) {
-    config.subscribers.forEach(function(subscriber) {
-      request.post(subscriber.postUrl, { json: { text: text } }, function(err, res) {
-        if(err) {
-          return console.error("Error posting to", subscriber.name);
-        }
-        console.log("Posting to", subscriber.name, res.statusCode);
-        lastStandingsPost = text;
-      });
+  if(subscribers.length > 0) {
+    var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
+    var infoList = [];
+    people.all().collection.forEach(function(person) {
+      infoList.push(person.name + ": " + person.metapoints);
     });
-  } else {
-    console.log("No changes since last post to subscribers.");
+    text += infoList.join(", ");
+
+    if(text !== lastStandingsPost) {
+      config.subscribers.forEach(function(subscriber) {
+        request.post(subscriber.postUrl, { json: { text: text } }, function(err, res) {
+          if(err) {
+            return console.error("Error posting to", subscriber.name);
+          }
+          console.log("Posting to", subscriber.name, res.statusCode);
+          lastStandingsPost = text;
+        });
+      });
+    } else {
+      console.log("No changes since last post to subscribers.");
+    }
   }
 }, config.saveFreqInMins * 60 * 1000);
