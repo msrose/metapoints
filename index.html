@@ -13,19 +13,20 @@
     <script src="updateFeed.js" type="text/javascript"></script>
     <script src="error.js" type="text/javascript"></script>
     <script src="transactions.js" type="text/javascript"></script>
+    <script src="chat.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
     <div class="transactions" ng-controller="transactions" style="width: {{ collapsed ? 20 : 200 }}px">
       <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
       <div ng-if="!collapsed">
         <h2>Store</h2>
-        <div class="group">Spend 1000 Metapoints: <button class="regular-btn" ng-click="upgradePowerLevel()">Upgrade Power Level</button></div>
-        <div class="group">Gain 750 Metapoints: <button class="regular-btn" ng-click="cashInPowerLevel()">Cash-In Power Level</button></div>
+        <div class="group">Spend 1000 Metapoints: <button ng-click="upgradePowerLevel()">Upgrade Power Level</button></div>
+        <div class="group">Gain 750 Metapoints: <button ng-click="cashInPowerLevel()">Cash-In Power Level</button></div>
       </div>
     </div>
     <div class="content">
       <div ng-controller="notifications">
-        <button id="enable_notify" class="regular-btn" ng-click="enableNotifications()" ng-if="!notificationsEnabled">Enable Notifications</button>
+        <button id="enable_notify" ng-click="enableNotifications()" ng-if="!notificationsEnabled">Enable Notifications</button>
       </div>
       <h1>Metapoints</h1>
       <div ng-controller="pointsTable">
@@ -53,7 +54,7 @@
           <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
           <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
         </div>
-        <div class="group">
+        <div class="authquestion">
           {{authQuestion}} <input type="text" ng-model="authAnswer">
         </div>
       </div>
@@ -64,6 +65,17 @@
         <ul>
           <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}}</li>
         </ul>
+      </div>
+    </div>
+    <div class="chat" ng-controller="chat">
+      <div id="messagelist" class="messages">
+        <ul>
+          <li ng-repeat="message in messages"><b>{{message.sender}}</b>: {{message.text}}</li>
+        </ul>
+      </div>
+      <div id="messages" class="message-input">
+        <input type="text" id="chat_input" ng-model="chatMessage" ng-keyup="$event.keyCode === 13 && sendChatMessage()">
+        <button id="chat_button" ng-click="sendChatMessage()">Send</button>
       </div>
     </div>
   </body>

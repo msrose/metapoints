@@ -151,6 +151,14 @@ io.on("connection", function(socket) {
       }
     }
   });
+
+  socket.on("send chat message", function(message) {
+    var sanitizedMsg = message ? message.trim() : null;
+    if(sanitizedMsg) {
+      console.log("Chat message received from", me.name);
+      io.emit("chat message", { sender: me.name, text: sanitizedMsg });
+    }
+  });
 });
 
 function serverHandler(req, res) {
