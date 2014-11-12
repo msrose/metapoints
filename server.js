@@ -36,60 +36,37 @@ var server = http.createServer(serverHandler).listen(config.port, config.host);
 
 var io = socket(server);
 
-function setActiveState(person, active) {
-  if(person) {
-    person.active += active ? 1 : -1;
-    io.emit("update", people.all());
-  }
-}
-
-function timeoutPerson(person, socket, timeout) {
+function timeoutPerson(person, timeout, callbacks) {
   person.timeout = timeout;
-  setAuthQuestion(person, socket);
+  person.authQuestion = parseInt(Math.random() * authQuestions.length);
+  if(callbacks.started) callbacks.started();
   setTimeout(function() {
     person.timeout = 0;
-    if(socket) {
-      socket.emit("timeout change", { timeout: person.timeout });
-    }
+    if(callbacks.finished) callbacks.finished();
   }, timeout * 1000);
 }
 
-function setAuthQuestion(person, socket) {
-  person.authQuestion = parseInt(Math.random() * authQuestions.length);
-  socket.emit("timeout change", { timeout: person.timeout, auth: authQuestions[person.authQuestion].text });
-}
+function changeMetapoints(data, requester, callback) {
+  callback = callback || function() {};
+  if(data.name !== requester.name) {
+    console.log("Changing metapoints:", requester.name, "changes", data.name, data.type, data.size);
+    var person = people.findBy("name", data.name);
 
-function changeMetapoints(name, type, requester, size) {
-  if(name !== requester) {
-    console.log("Changing metapoints:", requester, "changes", name, type, size);
-    var person = people.findBy("name", name);
-
-    var amount = util.getPointsAmount(size);
+    var amount = util.getPointsAmount(data.size);
 
     if(person) {
-      var desc;
-      if(type === "inc") {
+      if(data.type === "inc") {
         person.metapoints += amount;
-        desc = "increased";
       } else {
         person.metapoints -= amount;
-        desc = "decreased";
       }
-      person.lastUpdatedBy = requester;
-      io.emit("update", {
-        collection: people.all().collection,
-        changed: {
-          time: util.getCurrentTime(),
-          name: person.name,
-          changer: requester,
-          desc: desc,
-          amount: amount
-        }
-      });
-
+      person.lastUpdatedBy = requester.name;
+      callback(null, amount);
     } else {
-      console.error("Person not found!", name);
+      callback("Person " + data.name + " not found!")
     }
+  } else {
+    callback("Person tried to change their own metapoints: " + requester.name);
   }
 }
 
@@ -99,25 +76,49 @@ io.on("connection", function(socket) {
 
   console.log("Socket connection established", ip);
 
+  var timeoutCallback = function() {
+    if(socket) {
+      socket.emit("timeout change", { timeout: me.timeout, auth: authQuestions[me.authQuestion].text });
+    }
+  };
+
   if(me) {
     socket.emit("me data", { name: me.name });
-    setAuthQuestion(me, socket);
-    setActiveState(me, true);
+    timeoutPerson(me, 0, { started: timeoutCallback });
+    me.active++;
+    io.emit("update", people.all());
   }
 
   socket.on("disconnect", function() {
     console.log("Socket disconnected", ip);
-    if(me) setActiveState(me, false);
+    if(me) {
+      me.active--;
+      io.emit("update", people.all());
+    }
   });
 
   socket.on("change metapoints", function(data) {
     if(me && me.timeout === 0) {
       if(data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
-        changeMetapoints(data.name, data.type, me.name, data.size);
-        timeoutPerson(me, socket, 10);
+        changeMetapoints(data, me, function(err, amount) {
+          if(err) {
+            return socket.emit("error message", { msg: "Could not update metapoints: " + err });
+          }
+          io.emit("update", {
+            collection: people.all().collection,
+            changed: {
+              time: util.getCurrentTime(),
+              name: data.name,
+              changer: me.name,
+              desc: data.type === "inc" ? "increased" : "decreased",
+              amount: amount
+            }
+          });
+        });
+        timeoutPerson(me, 10, { started: timeoutCallback, finished: timeoutCallback });
       } else {
-        timeoutPerson(me, socket, 60);
-        console.log("Incorrect auth answer by ", me.name, data.authAnswer);
+        timeoutPerson(me, 60, { started: timeoutCallback, finished: timeoutCallback });
+        console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
         socket.emit("error message", { msg: "Incorrect auth answer." });
       }
     } else {
@@ -141,7 +142,7 @@ io.on("connection", function(socket) {
   socket.on("cash-in power level", function() {
     if(me) {
       if(me.powerLevel > 0) {
-        console.log("Cashing in powerlevel: ", me.name, me.powerLevel - 1);
+        console.log("Cashing in powerlevel:", me.name, me.powerLevel - 1);
         me.powerLevel--;
         me.metapoints += 750;
         io.emit("update", people.all());
@@ -180,9 +181,6 @@ function serverHandler(req, res) {
         file = "register.html";
         contentType = "html";
       }
-    } else if(req.url === "/" + config.pointsFile) {
-      contentType = "json";
-      useCache = true;
     } else if(/.+\.js$/.test(req.url)) {
       file = req.url.split("/")[1];
       contentType = "javascript";
