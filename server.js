@@ -38,12 +38,16 @@ var io = socket(server);
 
 function timeoutPerson(person, timeout, callbacks) {
   person.timeout = timeout;
-  person.authQuestion = parseInt(Math.random() * authQuestions.length);
+  setAuthQuestion(person);
   if(callbacks.started) callbacks.started();
   setTimeout(function() {
     person.timeout = 0;
     if(callbacks.finished) callbacks.finished();
   }, timeout * 1000);
+}
+
+function setAuthQuestion(person) {
+  person.authQuestion = parseInt(Math.random() * authQuestions.length);
 }
 
 function changeMetapoints(data, requester, callback) {
@@ -84,7 +88,8 @@ io.on("connection", function(socket) {
 
   if(me) {
     socket.emit("me data", { name: me.name });
-    timeoutPerson(me, 0, { started: timeoutCallback });
+    setAuthQuestion(me);
+    timeoutCallback();
     me.active++;
     io.emit("update", people.all());
   }
