@@ -1,13 +1,11 @@
-angular.module("metapoints").controller("metapoints", ["$scope", "socket", "pointSizes",
-  function($scope, socket, pointSizes) {
-    socket.on("me data", function(data) {
-      $scope.me = data.name;
-    });
+angular.module("metapoints").controller("metapoints", ["$scope", "socket", "pointSizes", "identity",
+  function($scope, socket, pointSizes, identity) {
+    $scope.me = identity.name;
 
     socket.on("update", function(data) {
       $scope.pointsData = data.collection;
-      $scope.selectedName = $scope.selectedName || $scope.me;
-      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === $scope.me; i++) {
+      $scope.selectedName = $scope.selectedName || me.name;
+      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === me.name; i++) {
         $scope.selectedName = $scope.pointsData[i].name;
       }
     });
