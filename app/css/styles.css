@@ -1,5 +1,5 @@
 html {
-  height: 100%;
+  height: 95%;
   margin: 0;
   padding: 0;
 }
@@ -11,6 +11,7 @@ body {
   padding: 0;
   margin: 0;
   min-width: 1200px;
+  border-bottom: 1px solid dodgerblue;
 }
 
 .content {
@@ -98,7 +99,7 @@ button {
   float: left;
   border-right: 1px solid dodgerblue;
   height: 100%;
-  padding: 5px 10px;
+  padding: 0px 10px;
   margin: 0;
 }
 
@@ -108,6 +109,11 @@ button {
 
 .transactions h2 {
   margin: 0 0 20px 0;
+}
+
+.chat h2 {
+  margin: 0 20px 0 0;
+  text-align: right;
 }
 
 .transactions .collapse-toggle {
@@ -135,7 +141,6 @@ button {
   width: 295px;
   bottom: 0;
   left: 0;
-  margin-bottom: 20px;
   padding-left: 5px;
   border-top: 1px solid dodgerblue;
   padding-top: 5px;
