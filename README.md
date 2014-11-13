@@ -13,8 +13,7 @@ Install [nodejs](http://nodejs.org/).
 ```
 $ git clone https://github.com/msrose/metapoints metapoints
 $ cd !$
-$ cp config.example.json config.json
-$ cp authquestions.example.json authquestions.json
+$ cp auth/authquestions.example.json authquestions.json
 $ node server.js
 ```
 
@@ -28,4 +27,4 @@ Start the server with optional command line argument indicating the config file 
 $ node server.js points.json [configFile]
 ```
 
-See the [example config file](./config.example.json) and the [example auth questions file](./authquestions.example.json) for how to format config and auth questions.
+See the [example config file](./config.example.json) and the [example auth questions file](./auth/authquestions.example.json) for how to format config and auth questions.
