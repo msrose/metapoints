@@ -3,6 +3,7 @@ var fs = require("fs");
 var qs = require("querystring");
 var socket = require("socket.io");
 var request = require("request");
+var truncate = require("truncate");
 
 var db = require("./lib/filedb");
 var util = require("./lib/util");
@@ -159,7 +160,7 @@ io.on("connection", function(socket) {
   });
 
   socket.on("send chat message", function(message) {
-    var sanitizedMsg = message ? message.trim() : null;
+    var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
     if(sanitizedMsg) {
       console.log("Chat message received from", me.name);
       io.emit("chat message", { sender: me.name, text: sanitizedMsg });
