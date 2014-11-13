@@ -16,8 +16,6 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
           };
         });
       }
-      var messageList = document.getElementById("messagelist");
-      messageList.scrollTop = messageList.scrollHeight;
     });
 
     $scope.sendChatMessage = function() {
