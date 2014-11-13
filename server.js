@@ -7,10 +7,6 @@ var request = require("request");
 var db = require("./lib/filedb");
 var util = require("./lib/util");
 
-var configFile = process.argv[2] || "./config.json";
-
-var config = fs.existsSync(configFile) ? require(configFile) : {};
-
 var defaults = {
   pointsFile: "./points.json",
   saveFreqInMins: 1,
@@ -20,14 +16,11 @@ var defaults = {
   subscribers: []
 };
 
-for(var prop in defaults) {
-  if(!config[prop]) {
-    config[prop] = defaults[prop];
-  }
-}
+var configFile = process.argv[2] || "./config.json";
+var config = fs.existsSync(configFile) ? require(configFile) : {};
+util.merge(config, defaults);
 
 var authQuestions = require(config.authQuestionsFile).questions;
-
 authQuestions.forEach(function(question) {
   question.answer = util.sanitizeAuthInput(question.answer);
 });
