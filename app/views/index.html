@@ -72,9 +72,7 @@
     </div>
     <div class="chat" ng-controller="chat">
       <div class="messages">
-        <ul>
-          <li ng-repeat="message in messages"><b>{{message.sender}}</b>: {{message.text}}</li>
-        </ul>
+        <ul><li ng-repeat="message in messages"><b>{{message.sender}}</b>: {{message.text}}</li></ul>
       </div>
       <div id="messages" class="message-input">
         <input type="text" id="chat_input" ng-model="chatMessage" ng-keyup="$event.keyCode === 13 && sendChatMessage()">

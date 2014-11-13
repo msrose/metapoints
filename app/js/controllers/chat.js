@@ -4,7 +4,8 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
 
     socket.on("chat message", function(data) {
       $scope.messages.push(data);
-      if(!notification.timedOut() && data.sender !== identity.name && data.text.toUpperCase().indexOf("@" + identity.name.toUpperCase()) >= 0) {
+
+      if(!notification.timedOut() && data.sender !== identity.name() && data.text.toUpperCase().indexOf("@" + identity.name().toUpperCase()) >= 0) {
         notification.notify({
           title: "Message from " + data.sender,
           body: data.text,

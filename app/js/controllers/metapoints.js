@@ -1,11 +1,10 @@
 angular.module("metapoints").controller("metapoints", ["$scope", "socket", "pointSizes", "identity",
   function($scope, socket, pointSizes, identity) {
-    $scope.me = identity.name;
-
     socket.on("update", function(data) {
+      $scope.me = identity.name();
       $scope.pointsData = data.collection;
-      $scope.selectedName = $scope.selectedName || identity.name;
-      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === identity.name; i++) {
+      $scope.selectedName = $scope.selectedName || identity.name();
+      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === identity.name(); i++) {
         $scope.selectedName = $scope.pointsData[i].name;
       }
     });

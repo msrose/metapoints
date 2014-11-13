@@ -1,9 +1,15 @@
 angular.module("metapoints").factory("identity", ["socket",
   function(socket) {
-    var me = {};
+    var name = "";
+
     socket.on("me data", function(data) {
-      me = data;
+      name = data.name;
     });
-    return me;
+
+    return {
+      name: function() {
+        return name;
+      }
+    };
   }
 ]);

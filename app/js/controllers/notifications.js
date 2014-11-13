@@ -15,7 +15,7 @@ angular.module("metapoints").controller("notifications", ["$rootScope", "$scope"
     };
 
     socket.on("update", function(data) {
-      if(!notification.timedOut() && data.changed && data.changed.name === identity.name) {
+      if(!notification.timedOut() && data.changed && data.changed.name === identity.name()) {
         notification.notify({
           title: "Metapoints updated",
           body: data.changed.changer + " " + data.changed.desc + " your metapoints by " + data.changed.amount,
