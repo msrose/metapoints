@@ -4,8 +4,8 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
 
     socket.on("update", function(data) {
       $scope.pointsData = data.collection;
-      $scope.selectedName = $scope.selectedName || me.name;
-      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === me.name; i++) {
+      $scope.selectedName = $scope.selectedName || identity.name;
+      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === identity.name; i++) {
         $scope.selectedName = $scope.pointsData[i].name;
       }
     });
