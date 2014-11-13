@@ -71,7 +71,7 @@
       </div>
     </div>
     <div class="chat" ng-controller="chat">
-      <div class="messages">
+      <div id="messageList" class="messages">
         <ul><li ng-repeat="message in messages"><b>{{message.sender}}</b>: {{message.text}}</li></ul>
       </div>
       <div id="messages" class="message-input">

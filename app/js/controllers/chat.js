@@ -2,6 +2,14 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
   function($scope, socket, notification, identity) {
     $scope.messages = [];
 
+    var msgDiv = document.getElementById("messageList");
+
+    $scope.$watch("messages", function() {
+      $scope.$evalAsync(function() {
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+      });
+    }, true);
+
     socket.on("chat message", function(data) {
       $scope.messages.push(data);
 

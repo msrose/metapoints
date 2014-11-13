@@ -145,7 +145,6 @@ button {
 .chat .messages {
   height: 90%;
   word-wrap: break-word;
-  margin-top: 5px;
   overflow-y: auto;
 }
 
