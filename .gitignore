@@ -1,6 +1,6 @@
-*points*.json
-config.json
 *.swp
 *.log
+auth/authquestions.json
+db
+config.json
 node_modules
-authquestions.json

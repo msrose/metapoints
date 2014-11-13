@@ -1,22 +1,30 @@
-var http = require('http');
-var fs = require('fs');
-var qs = require('querystring');
-var socket = require('socket.io');
-var request = require('request');
+var http = require("http");
+var fs = require("fs");
+var qs = require("querystring");
+var socket = require("socket.io");
+var request = require("request");
 
-var db = require('./filedb');
-var util = require('./util');
+var db = require("./lib/filedb");
+var util = require("./lib/util");
 
-var configFile = process.argv[2] || "config.json";
+var configFile = process.argv[2] || "./config.json";
 
-var config = require('./config')(configFile, {
+var config = fs.existsSync(configFile) ? require(configFile) : {};
+
+var defaults = {
   pointsFile: "./points.json",
-  saveFreqInMins: 5,
+  saveFreqInMins: 1,
   host: "localhost",
   port: 1338,
   authQuestionsFile: "./authquestions.json",
   subscribers: []
-});
+};
+
+for(var prop in defaults) {
+  if(!config[prop]) {
+    config[prop] = defaults[prop];
+  }
+}
 
 var authQuestions = require(config.authQuestionsFile).questions;
 
@@ -175,14 +183,13 @@ function serverHandler(req, res) {
   if(req.method === "GET") {
     var file = "";
     var contentType = "";
-    var useCache = false;
     if(req.url === "/" || req.url === "/index.html") {
       if(!requester) {
         res.writeHead(302, { "Location": "/register.html" });
         res.end();
         return;
       } else {
-        file = "index.html";
+        file = "app/views/index.html";
         contentType = "html";
       }
     } else if(req.url === "/register.html") {
@@ -191,14 +198,14 @@ function serverHandler(req, res) {
         res.end();
         return;
       } else {
-        file = "register.html";
+        file = "app/views/register.html";
         contentType = "html";
       }
     } else if(/.+\.js$/.test(req.url)) {
-      file = req.url.split("/")[1];
+      file = "app/js" + req.url;
       contentType = "javascript";
     } else if(req.url === "/styles.css") {
-      file = "styles.css";
+      file = "app/css/styles.css";
       contentType = "css";
     } else if(req.url === "/pointSizes") {
       res.writeHead(200, { "Content-Type": "text/json" });
@@ -211,18 +218,14 @@ function serverHandler(req, res) {
     }
 
     res.writeHead(200, { "Content-Type": "text/" + contentType });
-    if(useCache) {
-      res.end(JSON.stringify(people.all()));
-    } else {
-      fs.readFile(file, "utf8", function(err, data) {
-        if(err) {
-          res.writeHead(500, { "Content-Type": "text/plain" });
-          res.end("Error");
-          return console.error(err);
-        }
-        res.end(data);
-      });
-    }
+    fs.readFile(file, "utf8", function(err, data) {
+      if(err) {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Error");
+        return console.error(err);
+      }
+      res.end(data);
+    });
   } else if (req.method === "POST") {
     var body = "";
 

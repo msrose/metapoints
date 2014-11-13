@@ -3,17 +3,17 @@
   <head>
     <title>Metapoints</title>
     <link rel="stylesheet" type="text/css" href="styles.css" />
-    <script src="https://cdn.socket.io/socket.io-1.1.0.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.1.0.js" type="text/javascript"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js" type="text/javascript"></script>
     <script src="app.js" type="text/javascript"></script>
-    <script src="pointsTable.js" type="text/javascript"></script>
-    <script src="metapoints.js" type="text/javascript"></script>
-    <script src="factories.js" type="text/javascript"></script>
-    <script src="notifications.js" type="text/javascript"></script>
-    <script src="updateFeed.js" type="text/javascript"></script>
-    <script src="error.js" type="text/javascript"></script>
-    <script src="transactions.js" type="text/javascript"></script>
-    <script src="chat.js" type="text/javascript"></script>
+    <script src="factories/factories.js" type="text/javascript"></script>
+    <script src="controllers/pointsTable.js" type="text/javascript"></script>
+    <script src="controllers/metapoints.js" type="text/javascript"></script>
+    <script src="controllers/notifications.js" type="text/javascript"></script>
+    <script src="controllers/updateFeed.js" type="text/javascript"></script>
+    <script src="controllers/error.js" type="text/javascript"></script>
+    <script src="controllers/transactions.js" type="text/javascript"></script>
+    <script src="controllers/chat.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
     <div class="transactions" ng-controller="transactions" style="width: {{ collapsed ? 20 : 200 }}px">
