@@ -12,9 +12,11 @@ var defaults = {
   pointsFile: "./points.json",
   messagesFile: "./messages.json",
   saveFreqInMins: 1,
+  pointChangeIntervalInSec: 10,
+  incorrectAuthTimeoutInSec: 60,
   host: "localhost",
   port: 1338,
-  authQuestionsFile: "./authquestions.json",
+  authQuestionsFile: false,
   subscribers: []
 };
 
@@ -22,10 +24,14 @@ var configFile = process.argv[2] || "./config.json";
 var config = fs.existsSync(configFile) ? require(configFile) : {};
 util.merge(config, defaults);
 
-var authQuestions = require(config.authQuestionsFile).questions;
-authQuestions.forEach(function(question) {
-  question.answer = util.sanitizeAuthInput(question.answer);
-});
+console.log("Config initialized:", config);
+
+var authQuestions = config.authQuestionsFile ? require(config.authQuestionsFile).questions : null;
+if(authQuestions) {
+  authQuestions.forEach(function(question) {
+    question.answer = util.sanitizeAuthInput(question.answer);
+  });
+}
 
 var people = db(config.pointsFile, {
   required: ["ip", "name"],
@@ -54,7 +60,9 @@ function timeoutPerson(person, timeout, callbacks) {
 }
 
 function setAuthQuestion(person) {
-  person.authQuestion = parseInt(Math.random() * authQuestions.length);
+  if(authQuestions) {
+    person.authQuestion = parseInt(Math.random() * authQuestions.length);
+  }
 }
 
 function changeMetapoints(data, requester, callback) {
@@ -66,11 +74,7 @@ function changeMetapoints(data, requester, callback) {
     var amount = util.getPointsAmount(data.size);
 
     if(person) {
-      if(data.type === "inc") {
-        person.metapoints += amount;
-      } else {
-        person.metapoints -= amount;
-      }
+      person.metapoints += data.type === "inc" ? amount : -amount;
       person.lastUpdatedBy = requester.name;
       callback(null, amount);
     } else {
@@ -89,7 +93,11 @@ io.on("connection", function(socket) {
 
   var timeoutCallback = function() {
     if(socket) {
-      socket.emit("timeout change", { timeout: me.timeout, auth: authQuestions[me.authQuestion].text });
+      var timeoutData = { timeout: me.timeout };
+      if(authQuestions) {
+        timeoutData.auth = authQuestions[me.authQuestion].text;
+      }
+      socket.emit("timeout change", timeoutData);
     }
   };
 
@@ -112,7 +120,7 @@ io.on("connection", function(socket) {
 
   socket.on("change metapoints", function(data) {
     if(me && me.timeout === 0) {
-      if(data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
+      if(!authQuestions || data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
         changeMetapoints(data, me, function(err, amount) {
           if(err) {
             return socket.emit("error message", { msg: "Could not update metapoints: " + err });
@@ -128,9 +136,9 @@ io.on("connection", function(socket) {
             }
           });
         });
-        timeoutPerson(me, 10, { started: timeoutCallback, finished: timeoutCallback });
-      } else {
-        timeoutPerson(me, 60, { started: timeoutCallback, finished: timeoutCallback });
+        timeoutPerson(me, config.pointChangeIntervalInSec, { started: timeoutCallback, finished: timeoutCallback });
+      } else if(authQuestions) {
+        timeoutPerson(me, config.incorrectAuthTimeoutInSec, { started: timeoutCallback, finished: timeoutCallback });
         console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
         socket.emit("error message", { msg: "Incorrect auth answer." });
       }

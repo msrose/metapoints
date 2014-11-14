@@ -2,6 +2,8 @@
   "pointsFile": "./points.json",
   "messagesFile": "./messages.json",
   "saveFreqInMins": 5,
+  "pointChangeIntervalInSec": 10,
+  "incorrectAuthTimeoutInSec": 60,
   "host": "localhost",
   "port": 1338,
   "authQuestionsFile": "./authquestions.json",

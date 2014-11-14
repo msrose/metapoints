@@ -21,7 +21,7 @@
   <body ng-app="metapoints">
     <div class="transactions" ng-controller="transactions" style="width: {{ collapsed ? 20 : 200 }}px">
       <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
-      <div ng-if="!collapsed">
+      <div ng-show="!collapsed">
         <h2>Store</h2>
         <div class="group">Spend 1000 Metapoints: <button ng-click="upgradePowerLevel()">Upgrade Power Level</button></div>
         <div class="group">Gain 750 Metapoints: <button ng-click="cashInPowerLevel()">Cash-In Power Level</button></div>
@@ -29,7 +29,7 @@
     </div>
     <div class="content">
       <div ng-controller="notifications">
-        <button id="enable_notify" ng-click="enableNotifications()" ng-if="!notificationsEnabled">Enable Notifications</button>
+        <button id="enable_notify" ng-click="enableNotifications()" ng-show="!notificationsEnabled">Enable Notifications</button>
       </div>
       <h1>Metapoints</h1>
       <div ng-controller="pointsTable">
@@ -57,12 +57,12 @@
           <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
           <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
         </div>
-        <div class="authquestion">
+        <div class="authquestion" ng-show="!!authQuestion">
           {{authQuestion}} <input type="text" ng-model="authAnswer">
         </div>
       </div>
       <div ng-controller="error">
-        <p class="error" ng-if="!!errorMsg">{{errorMsg}}</p>
+        <p class="error" ng-show="!!errorMsg">{{errorMsg}}</p>
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
