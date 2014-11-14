@@ -286,18 +286,19 @@ function serverHandler(req, res) {
       } else if(req.url === "/integrations") {
         var integration = config.integrations[req.headers.metakey];
         if(!integration) {
+          console.log("Unknown integration metakey:", req.headers.metakey);
           res.writeHead(401, { "Content-Type": "text/plain" });
           return res.end("Invalid meta key");
         }
         console.log("Receiving request from integration:", integration.name);
         try {
-          // Expecting { name: "name", reason: "why are you giving metapoints?" }
-          var info = JSON.parse(body);
+          // Expecting { ip: "123.135.36.6", reason: "why are you changing metapoints?" }
           console.log("Integration sent:", info);
-          if(!info.name || !info.reason) {
+          var info = JSON.parse(body);
+          if(!info.ip || !info.reason) {
             throw "Bad format";
           }
-          var person = people.findBy("name", info.name);
+          var person = people.findBy("ip", info.ip);
           if(!person) {
             throw "Unknown person";
           }
@@ -314,8 +315,9 @@ function serverHandler(req, res) {
             }
           });
           res.writeHead(200, { "Content-Type": "text/plain" });
-          return res.end("Updated " + info.name + "'s metapoints");
+          return res.end("Updated " + person.name + "'s metapoints");
         } catch (err) {
+          console.log("Integration request from", integration.name, "generated an error:", err);
           res.writeHead(400, { "Content-Type": "text/plain" });
           return res.end("Invalid request: " + err);
         }
