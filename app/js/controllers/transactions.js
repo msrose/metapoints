@@ -17,12 +17,12 @@ angular.module("metapoints").controller("transactions", ["$scope", "socket",
       }
     };
 
-    $scope.upgradePowerLevel = function() {
-      socket.emit("increase power level");
-    };
+    socket.on("transaction list", function(data) {
+      $scope.transactionList = data;
+    });
 
-    $scope.cashInPowerLevel = function() {
-      socket.emit("cash-in power level");
+    $scope.emitTransaction = function(name) {
+      socket.emit(name);
     };
   }
 ]);

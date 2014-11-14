@@ -23,8 +23,7 @@
       <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
       <div ng-show="!collapsed">
         <h2>Store</h2>
-        <div class="group">Spend 1000 Metapoints: <button ng-click="upgradePowerLevel()">Upgrade Power Level</button></div>
-        <div class="group">Gain 750 Metapoints: <button ng-click="cashInPowerLevel()">Cash-In Power Level</button></div>
+        <div class="group" ng-repeat="t in transactionList">{{t.type | uppercase}} {{t.amount}} Metapoints: <button ng-click="emitTransaction(t.socketEvent)">{{t.title}}</button></div>
       </div>
     </div>
     <div class="content">

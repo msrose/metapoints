@@ -7,6 +7,7 @@ var truncate = require("truncate");
 
 var db = require("./lib/filedb");
 var util = require("./lib/util");
+var transactions = require("./lib/transactions");
 
 var defaults = {
   pointsFile: "./points.json",
@@ -103,11 +104,12 @@ io.on("connection", function(socket) {
 
   if(me) {
     socket.emit("me data", { name: me.name });
+    socket.emit("saved chat", messages.all());
+    socket.emit("transaction list", transactions.all());
     setAuthQuestion(me);
     timeoutCallback();
     me.active++;
     io.emit("update", people.all());
-    io.emit("saved chat", messages.all());
   }
 
   socket.on("disconnect", function() {
@@ -147,30 +149,16 @@ io.on("connection", function(socket) {
     }
   });
 
-  socket.on("increase power level", function() {
-    if(me) {
-      if(me.metapoints >= 1000) {
-        console.log("Increasing power level:", me.name, me.powerLevel + 1);
-        me.powerLevel++;
-        me.metapoints -= 1000;
+  transactions.all().forEach(function(t) {
+    socket.on(t.socketEvent, function(data) {
+      transactions[t.socketHandler](me, data, function(err, info) {
+        if(err) {
+          return socket.emit("error message", { msg: err });
+        }
+        console.log("Transaction for", me.name + ":", info);
         io.emit("update", people.all());
-      } else {
-        socket.emit("error message", { msg: "1000 metapoints required to upgrade power level." });
-      }
-    }
-  });
-
-  socket.on("cash-in power level", function() {
-    if(me) {
-      if(me.powerLevel > 0) {
-        console.log("Cashing in powerlevel:", me.name, me.powerLevel - 1);
-        me.powerLevel--;
-        me.metapoints += 750;
-        io.emit("update", people.all());
-      } else {
-        socket.emit("error message", { msg: "Not enough power levels." })
-      }
-    }
+      });
+    });
   });
 
   socket.on("send chat message", function(message) {
