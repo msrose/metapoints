@@ -18,7 +18,8 @@ var defaults = {
   host: "localhost",
   port: 1338,
   authQuestionsFile: false,
-  subscribers: []
+  subscribers: [],
+  integrations: {}
 };
 
 var configFile = process.argv[2] || "./config.json";
@@ -32,6 +33,11 @@ if(authQuestions) {
   authQuestions.forEach(function(question) {
     question.answer = util.sanitizeAuthInput(question.answer);
   });
+}
+
+var integrationsList = [];
+for(var key in config.integrations) {
+  integrationsList.push(config.integrations[key].name);
 }
 
 var people = db(config.pointsFile, {
@@ -104,8 +110,12 @@ io.on("connection", function(socket) {
 
   if(me) {
     socket.emit("me data", { name: me.name });
-    socket.emit("saved chat", messages.all());
     socket.emit("transaction list", transactions.all());
+    if(integrationsList.length > 0) {
+      socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
+    }
+    socket.emit("saved chat", messages.all());
+
     setAuthQuestion(me);
     timeoutCallback();
     me.active++;
@@ -134,7 +144,8 @@ io.on("connection", function(socket) {
               name: data.name,
               changer: me.name,
               desc: data.type === "inc" ? "increased" : "decreased",
-              amount: amount
+              amount: amount,
+              reason: ""
             }
           });
         });
@@ -247,12 +258,12 @@ function serverHandler(req, res) {
     req.on("end", function() {
       if(req.url === "/register") {
         if(!requester) {
-          var name = qs.parse(body).name.split(/[^\w]/).join("");
+          var name = qs.parse(body).name.split(/[^\w]/).join("").toLowerCase();
           if(!name) {
             res.writeHead(400, { "Content-Type": "text/plain" });
             res.end("Invalid name provided");
           } else {
-            if(people.findBy("name", name) !== null) {
+            if(people.findBy("name", name) !== null || name === "metapoints") {
               res.writeHead(412, { "Content-Type": "text/plain" });
               return res.end("Name " + body + " already taken");
             }
@@ -271,6 +282,42 @@ function serverHandler(req, res) {
         } else {
           res.writeHead(412, { "Content-Type": "text/plain" });
           res.end("IP " + ip + " already registered");
+        }
+      } else if(req.url === "/integrations") {
+        var integration = config.integrations[req.headers.metakey];
+        if(!integration) {
+          res.writeHead(401, { "Content-Type": "text/plain" });
+          return res.end("Invalid meta key");
+        }
+        console.log("Receiving request from integration:", integration.name);
+        try {
+          // Expecting { name: "name", reason: "why are you giving metapoints?" }
+          var info = JSON.parse(body);
+          console.log("Integration sent:", info);
+          if(!info.name || !info.reason) {
+            throw "Bad format";
+          }
+          var person = people.findBy("name", info.name);
+          if(!person) {
+            throw "Unknown person";
+          }
+          person.metapoints += integration.amount;
+          io.emit("update", {
+            collection: people.all().collection,
+            changed: {
+              time: util.getCurrentTime(),
+              name: person.name,
+              changer: integration.name,
+              desc: integration.amount > 0 ? "increased" : "decreased",
+              amount: Math.abs(integration.amount),
+              reason: info.reason.toString().trim()
+            }
+          });
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          return res.end("Updated " + info.name + "'s metapoints");
+        } catch (err) {
+          res.writeHead(400, { "Content-Type": "text/plain" });
+          return res.end("Invalid request: " + err);
         }
       } else {
         res.writeHead(404, { "Content-Type": "text/plain" });

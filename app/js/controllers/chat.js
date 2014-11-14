@@ -1,6 +1,7 @@
 angular.module("metapoints").controller("chat", ["$scope", "socket", "notification", "identity",
   function($scope, socket, notification, identity) {
     $scope.messages = [];
+    $scope.savedChatLoaded = false;
 
     var msgDiv = document.getElementById("messageList");
 
@@ -11,7 +12,12 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
     }, true);
 
     socket.on("saved chat", function(data) {
-      $scope.messages = data.collection;
+      if(!$scope.savedChatLoaded) {
+        data.collection.forEach(function(message) {
+          $scope.messages.push(message);
+        });
+        $scope.savedChatLoaded = true;
+      }
     });
 
     socket.on("chat message", function(data) {

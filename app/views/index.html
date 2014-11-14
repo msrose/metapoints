@@ -65,7 +65,7 @@
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
-          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}}</li>
+          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}} {{change.reason ? 'for ' + change.reason : ''}}</li>
         </ul>
       </div>
     </div>

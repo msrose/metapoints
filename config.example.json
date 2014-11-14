@@ -12,5 +12,11 @@
       "name": "Example subscriber name",
       "postUrl": "http://example.com"
     }
-  ]
+  ],
+  "integrations": {
+    "hereIsTheIntegrationMetaKey": {
+      "amount": 500,
+      "name": "Name of the integration"
+    }
+  }
 }
