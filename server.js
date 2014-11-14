@@ -85,7 +85,7 @@ function changeMetapoints(data, requester, callback) {
       person.lastUpdatedBy = requester.name;
       callback(null, amount);
     } else {
-      callback("Person " + data.name + " not found!")
+      callback("Person " + data.name + " not found!");
     }
   } else {
     callback("Person tried to change their own metapoints: " + requester.name);
@@ -176,8 +176,8 @@ io.on("connection", function(socket) {
     var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
     if(sanitizedMsg) {
       console.log("Chat message received from", me.name);
-      var message = { sender: me.name, text: sanitizedMsg, time: util.getCurrentTime() };
-      messages.add(message, function(err) {
+      var messageObj = { sender: me.name, text: sanitizedMsg, time: util.getCurrentTime() };
+      messages.add(messageObj, function(err) {
         if(err) {
           return console.err("Error saving message from", me.name);
         }
@@ -186,7 +186,7 @@ io.on("connection", function(socket) {
           messages.remove(toRemove);
         }
       });
-      io.emit("chat message", message);
+      io.emit("chat message", messageObj);
     }
   });
 });
@@ -249,7 +249,7 @@ function serverHandler(req, res) {
     req.on("data", function(data) {
       body += data.toString();
       if(body.length > 1e6) {
-        res.writeHead(413, { "Content-Type": "text/plain" })
+        res.writeHead(413, { "Content-Type": "text/plain" });
         res.end("Data too large!");
         return console.error("Too much data");
       }
@@ -293,7 +293,7 @@ function serverHandler(req, res) {
         console.log("Receiving request from integration:", integration.name);
         try {
           // Expecting { ip: "123.135.36.6", reason: "why are you changing metapoints?" }
-          console.log("Integration sent:", info);
+          console.log("Integration sent:", body);
           var info = JSON.parse(body);
           if(!info.ip || !info.reason) {
             throw "Bad format";
