@@ -13,7 +13,6 @@ Install [nodejs](http://nodejs.org/).
 ```
 $ git clone https://github.com/msrose/metapoints metapoints
 $ cd !$
-$ cp auth/authquestions.example.json authquestions.json
 $ node server.js
 ```
 
