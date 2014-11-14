@@ -10,6 +10,10 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
       });
     }, true);
 
+    socket.on("saved chat", function(data) {
+      $scope.messages = data.collection;
+    });
+
     socket.on("chat message", function(data) {
       $scope.messages.push(data);
 

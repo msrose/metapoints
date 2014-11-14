@@ -10,6 +10,7 @@ var util = require("./lib/util");
 
 var defaults = {
   pointsFile: "./points.json",
+  messagesFile: "./messages.json",
   saveFreqInMins: 1,
   host: "localhost",
   port: 1338,
@@ -32,6 +33,10 @@ var people = db(config.pointsFile, {
   persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy"]
 }, function(err) {
   console.error("Failed to init filedb:", err);
+});
+
+var messages = db(config.messagesFile, {
+  required: ["sender", "text", "time"]
 });
 
 var server = http.createServer(serverHandler).listen(config.port, config.host);
@@ -94,6 +99,7 @@ io.on("connection", function(socket) {
     timeoutCallback();
     me.active++;
     io.emit("update", people.all());
+    io.emit("saved chat", messages.all());
   }
 
   socket.on("disconnect", function() {
@@ -163,7 +169,17 @@ io.on("connection", function(socket) {
     var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
     if(sanitizedMsg) {
       console.log("Chat message received from", me.name);
-      io.emit("chat message", { sender: me.name, text: sanitizedMsg });
+      var message = { sender: me.name, text: sanitizedMsg, time: util.getCurrentTime() };
+      messages.add(message, function(err) {
+        if(err) {
+          return console.err("Error saving message from", me.name);
+        }
+        if(messages.count() > 10) {
+          var toRemove = messages.at(0);
+          messages.remove(toRemove);
+        }
+      });
+      io.emit("chat message", message);
     }
   });
 });
@@ -278,6 +294,13 @@ setInterval(function() {
       return console.error("Error saving data:", err);
     }
     console.log("Data saved to", config.pointsFile);
+  });
+
+  messages.save(function(err) {
+    if(err) {
+      return console.error("Error saving messages:", err);
+    }
+    console.log("Messages saved to", config.messagesFile);
   });
 
   if(config.subscribers.length > 0) {

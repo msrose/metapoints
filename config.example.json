@@ -1,5 +1,6 @@
 {
   "pointsFile": "./points.json",
+  "messagesFile": "./messages.json",
   "saveFreqInMins": 5,
   "host": "localhost",
   "port": 1338,
