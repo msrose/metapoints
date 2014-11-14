@@ -1,9 +1,12 @@
 var http = require("http");
 var fs = require("fs");
 var qs = require("querystring");
+
 var socket = require("socket.io");
 var request = require("request");
 var truncate = require("truncate");
+var serveStatic = require('serve-static');
+var finalhandler = require('finalhandler');
 
 var db = require("./lib/filedb");
 var util = require("./lib/util");
@@ -191,6 +194,8 @@ io.on("connection", function(socket) {
   });
 });
 
+var serve = serveStatic("./app/images");
+
 function serverHandler(req, res) {
   console.log("Request made: ", req.method, req.connection.remoteAddress, req.url);
 
@@ -224,6 +229,10 @@ function serverHandler(req, res) {
     } else if(req.url === "/styles.css") {
       file = "app/css/styles.css";
       contentType = "css";
+    } else if(/.+\.png$/.test(req.url)) {
+      var done = finalhandler(req, res);
+      serve(req, res, done);
+      return;
     } else if(req.url === "/pointSizes") {
       res.writeHead(200, { "Content-Type": "text/json" });
       res.end(JSON.stringify(util.getPointsAmounts()));
