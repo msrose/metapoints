@@ -23,7 +23,7 @@ Visit [http://localhost:1338/](http://localhost:1338/) to start getting meta.
 Start the server with optional command line argument indicating the config file to use.
 
 ```
-$ node server.js points.json [configFile]
+$ node server.js [configFile]
 ```
 
 See the [example config file](./config.example.json) and the [example auth questions file](./auth/authquestions.example.json) for how to format config and auth questions.
