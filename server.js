@@ -33,6 +33,7 @@ console.log("Config initialized:", config);
 
 var authQuestions = config.authQuestionsFile ? require(config.authQuestionsFile).questions : null;
 if(authQuestions) {
+  console.log("Loaded", authQuestions.length, "auth questions from", config.authQuestionsFile);
   authQuestions.forEach(function(question) {
     question.answer = util.sanitizeAuthInput(question.answer);
   });
@@ -63,10 +64,13 @@ function timeoutPerson(person, timeout, callbacks) {
   person.timeout = timeout;
   setAuthQuestion(person);
   if(callbacks.started) callbacks.started();
-  setTimeout(function() {
-    person.timeout = 0;
-    if(callbacks.finished) callbacks.finished();
-  }, timeout * 1000);
+  var intervalId = setInterval(function() {
+    person.timeout--;
+    if(callbacks.changed) callbacks.changed();
+    if(person.timeout === 0) {
+      clearInterval(intervalId);
+    }
+  }, 1000);
 }
 
 function setAuthQuestion(person) {
@@ -101,17 +105,20 @@ io.on("connection", function(socket) {
 
   console.log("Socket connection established", ip);
 
-  var timeoutCallback = function() {
-    if(socket) {
-      var timeoutData = { timeout: me.timeout };
-      if(authQuestions) {
-        timeoutData.auth = authQuestions[me.authQuestion].text;
-      }
-      socket.emit("timeout change", timeoutData);
+  var timeoutStartCallback = function() {
+    var timeoutData = { timeout: me.timeout };
+    if(authQuestions) {
+      timeoutData.auth = authQuestions[me.authQuestion].text;
     }
+    io.sockets.in(me.ip).emit("timeout change", timeoutData);
+  };
+
+  var timeoutChangeCallback = function() {
+    io.sockets.in(me.ip).emit("timeout change", { timeout: me.timeout });
   };
 
   if(me) {
+    socket.join(me.ip);
     socket.emit("me data", { name: me.name });
     socket.emit("transaction list", transactions.all());
     if(integrationsList.length > 0) {
@@ -120,7 +127,7 @@ io.on("connection", function(socket) {
     socket.emit("saved chat", messages.all());
 
     setAuthQuestion(me);
-    timeoutCallback();
+    timeoutStartCallback();
     me.active++;
     io.emit("update", people.all());
   }
@@ -152,9 +159,15 @@ io.on("connection", function(socket) {
             }
           });
         });
-        timeoutPerson(me, config.pointChangeIntervalInSec, { started: timeoutCallback, finished: timeoutCallback });
+        timeoutPerson(me, config.pointChangeIntervalInSec, {
+          started: timeoutStartCallback,
+          changed: timeoutChangeCallback
+        });
       } else if(authQuestions) {
-        timeoutPerson(me, config.incorrectAuthTimeoutInSec, { started: timeoutCallback, finished: timeoutCallback });
+        timeoutPerson(me, config.incorrectAuthTimeoutInSec, {
+          started: timeoutStartCallback,
+          changed: timeoutChangeCallback
+        });
         console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
         socket.emit("error message", { msg: "Incorrect auth answer." });
       }

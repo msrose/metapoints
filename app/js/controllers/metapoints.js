@@ -14,7 +14,7 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
 
     socket.on("timeout change", function(data) {
       $scope.timeout = data.timeout;
-      $scope.authQuestion = data.auth;
+      if(data.auth) $scope.authQuestion = data.auth;
     });
 
     $scope.selectedPointSize = pointSizes.defaultPointSize;

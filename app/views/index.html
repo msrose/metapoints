@@ -55,6 +55,7 @@
         <div class="group">
           <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
           <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
+          <span class="timeout" ng-show="timeout > 0">{{timeout}}</span>
         </div>
         <div class="authquestion" ng-show="!!authQuestion">
           {{authQuestion}} <input type="text" ng-model="authAnswer">
