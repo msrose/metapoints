@@ -52,8 +52,8 @@
         </table>
       </div>
       <div class="point-changes" ng-controller="metapoints" ng-show="pointsData.length > 1">
-        <div class="group">Point Magnitude: <select ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select></div>
-        <div class="group">Name: <select ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select></div>
+        <div class="group">Point Magnitude: <select id="pointDropdown" ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select></div>
+        <div class="group">Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select></div>
         <div class="group">
           <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
           <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
@@ -69,7 +69,16 @@
           </div>
         </div>
         <div class="separate-group large" ng-show="!!authQuestion">
-          {{authQuestion}} <input type="text" ng-model="authAnswer" />
+          {{authQuestion}} <input type="text" ng-model="authAnswer" ng-keyup="handleShortcut($event)" autofocus=autofocus" />
+        </div>
+        <div id="shortcuts" class="separate-group small muted">
+          <span ng-show="!showShortcuts">Type <b>Alt+Shift+?</b> for keyboard shortcuts.</span>
+          <span ng-show="showShortcuts">
+            When answering auth question:
+            <ul>
+              <li ng-repeat="s in shortcuts"><b>{{s.keys}}</b>: {{s.action}}</li>
+            </ul>
+          </span>
         </div>
       </div>
       <div ng-controller="error">
@@ -77,7 +86,7 @@
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
-          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</li>
+          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> <span class="change {{change.desc}}">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</li>
         </ul>
       </div>
     </div>
