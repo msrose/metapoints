@@ -5,12 +5,11 @@ var qs = require("querystring");
 var socket = require("socket.io");
 var request = require("request");
 var truncate = require("truncate");
-var serveStatic = require('serve-static');
-var finalhandler = require('finalhandler');
 
 var db = require("./lib/filedb");
 var util = require("./lib/util");
 var transactions = require("./lib/transactions");
+var serverHandler = require("./lib/serverhandler");
 
 var defaults = {
   pointsFile: "./points.json",
@@ -49,15 +48,16 @@ var people = db(config.pointsFile, {
   optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null },
   persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy"]
 }, function(err) {
-  console.error("Failed to init filedb:", err);
+  console.error("Failed to init people:", err);
 });
 
 var messages = db(config.messagesFile, {
   required: ["sender", "text", "time"]
+}, function(err) {
+  console.error("Failed to init messages:", err);
 });
 
-var server = http.createServer(serverHandler).listen(config.port, config.host);
-
+var server = http.createServer(buildServerHandler()).listen(config.port, config.host);
 var io = socket(server);
 
 function timeoutPerson(person, timeout, callbacks) {
@@ -207,148 +207,77 @@ io.on("connection", function(socket) {
   });
 });
 
-var serve = serveStatic("./app/images");
+function buildServerHandler() {
+  return serverHandler.getHandler("./app", function(req) {
+    return people.findBy("ip", req.connection.remoteAddress);
+  }, {
+    onRegister: function(req, res, body) {
+      var ip = req.connection.remoteAddress;
+      var name = qs.parse(body).name.split(/[^\w]/).join("").toLowerCase();
 
-function serverHandler(req, res) {
-  console.log("Request made: ", req.method, req.connection.remoteAddress, req.url);
-
-  var ip = req.connection.remoteAddress;
-  var requester = people.findBy("ip", ip);
-
-  if(req.method === "GET") {
-    var file = "";
-    var contentType = "";
-    if(req.url === "/" || req.url === "/index.html") {
-      if(!requester) {
-        res.writeHead(302, { "Location": "/register.html" });
-        res.end();
-        return;
+      if(!name) {
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        return res.end("Invalid name provided");
       } else {
-        file = "app/views/index.html";
-        contentType = "html";
-      }
-    } else if(req.url === "/register.html") {
-      if(requester) {
-        res.writeHead(302, { "Location": "/" });
-        res.end();
-        return;
-      } else {
-        file = "app/views/register.html";
-        contentType = "html";
-      }
-    } else if(/.+\.js$/.test(req.url)) {
-      file = "app/js" + req.url;
-      contentType = "javascript";
-    } else if(req.url === "/styles.css") {
-      file = "app/css/styles.css";
-      contentType = "css";
-    } else if(/.+\.png$/.test(req.url)) {
-      var done = finalhandler(req, res);
-      serve(req, res, done);
-      return;
-    } else if(req.url === "/pointSizes") {
-      res.writeHead(200, { "Content-Type": "text/json" });
-      res.end(JSON.stringify(util.getPointsAmounts()));
-      return;
-    } else {
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end("Not found");
-      return;
-    }
-
-    res.writeHead(200, { "Content-Type": "text/" + contentType });
-    fs.readFile(file, "utf8", function(err, data) {
-      if(err) {
-        res.writeHead(500, { "Content-Type": "text/plain" });
-        res.end("Error");
-        return console.error(err);
-      }
-      res.end(data);
-    });
-  } else if (req.method === "POST") {
-    var body = "";
-
-    req.on("data", function(data) {
-      body += data.toString();
-      if(body.length > 1e6) {
-        res.writeHead(413, { "Content-Type": "text/plain" });
-        res.end("Data too large!");
-        return console.error("Too much data");
-      }
-    });
-
-    req.on("end", function() {
-      if(req.url === "/register") {
-        if(!requester) {
-          var name = qs.parse(body).name.split(/[^\w]/).join("").toLowerCase();
-          if(!name) {
-            res.writeHead(400, { "Content-Type": "text/plain" });
-            res.end("Invalid name provided");
-          } else {
-            if(people.findBy("name", name) !== null || name === "metapoints") {
-              res.writeHead(412, { "Content-Type": "text/plain" });
-              return res.end("Name " + body + " already taken");
-            }
-
-            people.add({ name: name, ip: ip }, function(err) {
-              if(err) {
-                console.error("Could not add person: ", err);
-                res.writeHead(500, { "Content-Type": "text/plain" });
-                return res.end("Could not register new person.");
-              }
-              io.emit("update", people.all());
-              res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
-              res.end("Registered " + body + " at " + ip);
-            });
-          }
-        } else {
+        if(people.findBy("name", name) !== null || name === "metapoints") {
           res.writeHead(412, { "Content-Type": "text/plain" });
-          res.end("IP " + ip + " already registered");
+          return res.end("Name " + body + " already taken");
         }
-      } else if(req.url === "/integrations") {
-        var integration = config.integrations[req.headers.metakey];
-        if(!integration) {
-          console.log("Unknown integration metakey:", req.headers.metakey);
-          res.writeHead(401, { "Content-Type": "text/plain" });
-          return res.end("Invalid meta key");
-        }
-        console.log("Receiving request from integration:", integration.name);
-        try {
-          // Expecting { ip: "123.135.36.6", reason: "why are you changing metapoints?" }
-          console.log("Integration sent:", body);
-          var info = JSON.parse(body);
-          if(!info.ip || !info.reason) {
-            throw "Bad format";
+
+        people.add({ name: name, ip: ip }, function(err) {
+          if(err) {
+            console.error("Could not add person: ", err);
+            res.writeHead(500, { "Content-Type": "text/plain" });
+            return res.end("Could not register new person.");
           }
-          var person = people.findBy("ip", info.ip);
-          if(!person) {
-            throw "Unknown person";
-          }
-          person.metapoints += integration.amount;
-          io.emit("update", {
-            collection: people.all().collection,
-            changed: {
-              time: util.getCurrentTime(),
-              name: person.name,
-              changer: integration.name,
-              desc: integration.amount > 0 ? "increased" : "decreased",
-              amount: Math.abs(integration.amount),
-              reason: info.reason.toString().trim()
-            }
-          });
-          res.writeHead(200, { "Content-Type": "text/plain" });
-          return res.end("Updated " + person.name + "'s metapoints");
-        } catch (err) {
-          console.log("Integration request from", integration.name, "generated an error:", err);
-          res.writeHead(400, { "Content-Type": "text/plain" });
-          return res.end("Invalid request: " + err);
-        }
-      } else {
-        res.writeHead(404, { "Content-Type": "text/plain" });
-        res.end("Unknown request");
+          io.emit("update", people.all());
+          res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
+          res.end("Registered " + body + " at " + ip);
+        });
       }
-    });
-  }
+    },
+    onIntegrationPost: function(req, res, body) {
+      var ip = req.connection.remoteAddress;
+      var integration = config.integrations[req.headers.metakey];
+
+      if(!integration) {
+        console.log("Unknown integration metakey:", req.headers.metakey);
+        res.writeHead(401, { "Content-Type": "text/plain" });
+        return res.end("Invalid meta key");
+      }
+      console.log("Receiving request from integration:", integration.name);
+      try {
+        console.log("Integration data sent:", body);
+        var info = JSON.parse(body);
+        if(!info.ip || !info.reason) {
+          throw "Bad format";
+        }
+        var person = people.findBy("ip", info.ip);
+        if(!person) {
+          throw "Unknown person";
+        }
+        person.metapoints += integration.amount;
+        person.lastUpdatedBy = integration.name;
+        io.emit("update", {
+          collection: people.all().collection,
+          changed: {
+            time: util.getCurrentTime(),
+            name: person.name,
+            changer: integration.name,
+            desc: integration.amount > 0 ? "increased" : "decreased",
+            amount: Math.abs(integration.amount),
+            reason: info.reason.toString().trim()
+          }
+        });
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        return res.end("Updated " + person.name + "'s metapoints");
+      } catch (err) {
+        console.log("Integration request from", integration.name, "generated an error:", err);
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        return res.end("Invalid request: " + err);
+      }
+    }
+  });
 }
 
 console.log("Server running at " + config.host + ":" + config.port);
