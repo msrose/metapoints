@@ -123,9 +123,16 @@ button {
   line-height: 25px;
 }
 
-.authquestion {
+.separate-group {
   width: 100%;
   clear: both;
+}
+
+.separate-group.small {
+  padding-top: 5px;
+}
+
+.separate-group.large {
   padding-top: 20px;
 }
 
@@ -183,4 +190,8 @@ button {
 
 .timeout {
   margin-left: 10px;
+}
+
+select {
+  width: 100px;
 }

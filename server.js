@@ -45,8 +45,8 @@ for(var key in config.integrations) {
 
 var people = db(config.pointsFile, {
   required: ["ip", "name"],
-  optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null },
-  persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy"]
+  optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null, multiplier: 1 },
+  persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier"]
 }, function(err) {
   console.error("Failed to init people:", err);
 });
@@ -85,9 +85,12 @@ function changeMetapoints(data, requester, callback) {
     console.log("Changing metapoints:", requester.name, "changes", data.name, data.type, data.size);
     var person = people.findBy("name", data.name);
 
-    var amount = util.getPointsAmount(data.size);
-
     if(person) {
+      var amount = util.getPointsAmount(data.size);
+      if(data.useMultiplier && requester.multiplier > 1) {
+        amount *= requester.multiplier;
+      }
+      requester.metapoints -= Math.round(amount / 10);
       person.metapoints += data.type === "inc" ? amount : -amount;
       person.lastUpdatedBy = requester.name;
       callback(null, amount);
@@ -95,7 +98,7 @@ function changeMetapoints(data, requester, callback) {
       callback("Person " + data.name + " not found!");
     }
   } else {
-    callback("Person tried to change their own metapoints: " + requester.name);
+    callback(requester.name + " tried to change their own metapoints.");
   }
 }
 
@@ -120,6 +123,7 @@ io.on("connection", function(socket) {
   if(me) {
     socket.join(me.ip);
     socket.emit("me data", { name: me.name });
+    socket.emit("multiplier", me.multiplier);
     socket.emit("transaction list", transactions.all());
     if(integrationsList.length > 0) {
       socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
@@ -184,6 +188,7 @@ io.on("connection", function(socket) {
         }
         console.log("Transaction for", me.name + ":", info);
         io.emit("update", people.all());
+        socket.emit("multiplier", me.multiplier);
       });
     });
   });

@@ -11,25 +11,46 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
 
     $scope.timeout = 0;
     $scope.authQuestion = "";
+    $scope.useMultiplier = false;
+    $scope.cost = 0;
 
     socket.on("timeout change", function(data) {
       $scope.timeout = data.timeout;
       if(data.auth) $scope.authQuestion = data.auth;
     });
 
-    $scope.selectedPointSize = pointSizes.defaultPointSize;
-    pointSizes.async().then(function(data) {
-      $scope.pointSizes = data;
+    socket.on("multiplier", function(data) {
+      $scope.multiplier = data;
     });
 
-    $scope.changeMetapoints = function(inc) {
-      socket.emit("change metapoints", {
-        name: $scope.selectedName,
-        type: inc ? "inc" : "dec",
-        size: $scope.selectedPointSize,
-        authAnswer: $scope.authAnswer
-      });
-      $scope.authAnswer = "";
+    pointSizes.async().then(function(data) {
+      $scope.pointSizes = data;
+      $scope.selectedPointSize = pointSizes.defaultPointSize;
+    });
+
+    $scope.$watch("[selectedPointSize,useMultiplier,multiplier]", function() {
+      var selectedPointValue;
+      for(var i in $scope.pointSizes) {
+        var currentSize = $scope.pointSizes[i];
+        if(currentSize.name === $scope.selectedPointSize) {
+          selectedPointValue = currentSize.value;
+          break;
+        }
+      }
+      $scope.cost = Math.round(selectedPointValue * ($scope.useMultiplier ? $scope.multiplier : 1) / 10);
+    }, true);
+
+    $scope.changeMetapoints = function(type) {
+      if($scope.authAnswer) {
+        socket.emit("change metapoints", {
+          name: $scope.selectedName,
+          type: type,
+          size: $scope.selectedPointSize,
+          authAnswer: $scope.authAnswer,
+          useMultiplier: $scope.useMultiplier
+        });
+        $scope.authAnswer = "";
+      }
     };
   }
 ]);

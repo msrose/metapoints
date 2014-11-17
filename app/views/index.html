@@ -23,7 +23,7 @@
       <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
       <div ng-show="!collapsed">
         <h2>Store</h2>
-        <div class="group" ng-repeat="t in transactionList">{{t.type | uppercase}} {{t.amount}} Metapoints: <button ng-click="emitTransaction(t.socketEvent)">{{t.title}}</button></div>
+        <div class="group" ng-repeat="t in transactionList">{{t.type}} {{t.amount}} {{t.attribute}}: <button ng-click="emitTransaction(t.socketEvent)">{{t.title}}</button></div>
       </div>
     </div>
     <div class="content">
@@ -38,6 +38,7 @@
             <th>Name</th>
             <th>Metapoints</th>
             <th>Power Level</th>
+            <th>Multiplier</th>
             <th>Last Updated By</th>
           </tr>
           <tr ng-repeat="p in pointsData | orderBy:['powerLevel', 'metapoints']:true">
@@ -45,20 +46,30 @@
             <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
             <td class="align-right">{{p.metapoints}}</td>
             <td>{{p.powerLevel}}<br><span class="power-bar" style="width: {{p.powerBarSize}}%"></span></td>
+            <td>x{{p.multiplier}}</td>
             <td>{{p.lastUpdatedBy}}</td>
           </tr>
         </table>
       </div>
-      <div class="point-changes" ng-controller="metapoints">
-        <div class="group">Point Magnitude: <select ng-model="selectedPointSize" ng-options="size.name as size.value for size in pointSizes | orderBy:'value'"></select></div>
+      <div class="point-changes" ng-controller="metapoints" ng-show="pointsData.length > 1">
+        <div class="group">Point Magnitude: <select ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select></div>
         <div class="group">Name: <select ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select></div>
         <div class="group">
-          <button class="action-btn" ng-click="changeMetapoints(true)" ng-disabled="timeout > 0">+</button>
-          <button class="action-btn" ng-click="changeMetapoints(false)" ng-disabled="timeout > 0">-</button>
+          <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
+          <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
           <span class="timeout" ng-show="timeout > 0">{{timeout}}</span>
         </div>
-        <div class="authquestion" ng-show="!!authQuestion">
-          {{authQuestion}} <input type="text" ng-model="authAnswer">
+        <div class="separate-group small">
+          <div class="group" ng-show="multiplier > 1">
+            <label for="cbxMultiplier">Use Multiplier:</label>
+            <input id="cbxMultiplier" type="checkbox" ng-model="useMultiplier" />
+          </div>
+          <div class="group">
+            Cost: <b>{{cost}}</b> metapoint{{cost != 1 ? 's' : ''}}
+          </div>
+        </div>
+        <div class="separate-group large" ng-show="!!authQuestion">
+          {{authQuestion}} <input type="text" ng-model="authAnswer" />
         </div>
       </div>
       <div ng-controller="error">
@@ -66,7 +77,7 @@
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
-          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}} {{change.reason ? 'for ' + change.reason : ''}}</li>
+          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> {{change.desc}} <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</li>
         </ul>
       </div>
     </div>
