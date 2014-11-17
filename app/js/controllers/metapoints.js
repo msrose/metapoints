@@ -60,7 +60,7 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
           case 77: //m
             $scope.useMultiplier = !$scope.useMultiplier;
             break;
-          case 191:
+          case 191: //?
             if(e.shiftKey) $scope.showShortcuts = !$scope.showShortcuts;
             break;
         }
@@ -68,7 +68,7 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
     };
 
     $scope.changeMetapoints = function(type) {
-      if($scope.authAnswer) {
+      if($scope.authAnswer && $scope.timeout === 0) {
         socket.emit("change metapoints", {
           name: $scope.selectedName,
           type: type,
