@@ -14,7 +14,7 @@
     <script src="controllers/metapoints.js" type="text/javascript"></script>
     <script src="controllers/notifications.js" type="text/javascript"></script>
     <script src="controllers/updateFeed.js" type="text/javascript"></script>
-    <script src="controllers/error.js" type="text/javascript"></script>
+    <script src="controllers/alert.js" type="text/javascript"></script>
     <script src="controllers/transactions.js" type="text/javascript"></script>
     <script src="controllers/chat.js" type="text/javascript"></script>
   </head>
@@ -41,7 +41,7 @@
             <th>Multiplier</th>
             <th>Last Updated By</th>
           </tr>
-          <tr ng-repeat="p in pointsData | orderBy:['powerLevel', 'metapoints']:true">
+          <tr ng-repeat="p in pointsData | orderBy:['multiplier', 'powerLevel', 'metapoints']:true">
             <td class="align-right">{{$index + 1}}</td>
             <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
             <td class="align-right">{{p.metapoints}}</td>
@@ -69,7 +69,7 @@
           </div>
         </div>
         <div class="separate-group large" ng-show="!!authQuestion">
-          {{authQuestion}} <input type="text" ng-model="authAnswer" ng-keyup="handleShortcut($event)" autofocus=autofocus" />
+          {{authQuestion}} <input type="text" ng-model="authAnswer" ng-keyup="handleShortcut($event)" autofocus="autofocus" />
         </div>
         <div id="shortcuts" class="separate-group small muted">
           <span ng-show="!showShortcuts">Type <b>Alt+Shift+?</b> for keyboard shortcuts.</span>
@@ -81,12 +81,12 @@
           </span>
         </div>
       </div>
-      <div ng-controller="error">
-        <p class="error" ng-show="!!errorMsg">{{errorMsg}}</p>
+      <div ng-controller="alert">
+        <p class="alert {{alertClass}}" ng-show="!!alertMessage">{{alertMessage}}</p>
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
-          <li ng-repeat="change in updateFeed track by $index">{{change.time}} - <b>{{change.changer}}</b> <span class="change {{change.desc}}">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</li>
+          <li ng-repeat="change in updateFeed track by $index"><div class="muted-timestamp">{{change.time}}</div><div class="update-item"><b>{{change.changer}}</b> <span class="change {{change.desc}}">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</div></li>
         </ul>
       </div>
     </div>

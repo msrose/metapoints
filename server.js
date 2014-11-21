@@ -17,6 +17,7 @@ var defaults = {
   saveFreqInMins: 1,
   pointChangeIntervalInSec: 10,
   incorrectAuthTimeoutInSec: 60,
+  jackpot: 500,
   host: "localhost",
   port: 1338,
   authQuestionsFile: false,
@@ -45,7 +46,7 @@ for(var key in config.integrations) {
 
 var people = db(config.pointsFile, {
   required: ["ip", "name"],
-  optional: { metapoints: 0, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null, multiplier: 1 },
+  optional: { metapoints: 500, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null, multiplier: 1 },
   persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier"]
 }, function(err) {
   console.error("Failed to init people:", err);
@@ -90,7 +91,11 @@ function changeMetapoints(data, requester, callback) {
       if(data.useMultiplier && requester.multiplier > 1) {
         amount *= requester.multiplier;
       }
-      requester.metapoints -= Math.round(amount / 10);
+      var cost = Math.round(amount / 10);
+      if(cost > 0 && requester.metapoints < cost) {
+        return callback("Insufficient metapoints.");
+      }
+      requester.metapoints -= cost;
       person.metapoints += data.type === "inc" ? amount : -amount;
       person.lastUpdatedBy = requester.name;
       callback(null, amount);
@@ -149,7 +154,7 @@ io.on("connection", function(socket) {
       if(!authQuestions || data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
         changeMetapoints(data, me, function(err, amount) {
           if(err) {
-            return socket.emit("error message", { msg: "Could not update metapoints: " + err });
+            return socket.emit("alert message", { msg: "Could not update metapoints: " + err, alertClass: "error" });
           }
           io.emit("update", {
             collection: people.all().collection,
@@ -162,10 +167,10 @@ io.on("connection", function(socket) {
               reason: ""
             }
           });
-        });
-        timeoutPerson(me, config.pointChangeIntervalInSec, {
-          started: timeoutStartCallback,
-          changed: timeoutChangeCallback
+          timeoutPerson(me, config.pointChangeIntervalInSec, {
+            started: timeoutStartCallback,
+            changed: timeoutChangeCallback
+          });
         });
       } else if(authQuestions) {
         timeoutPerson(me, config.incorrectAuthTimeoutInSec, {
@@ -173,10 +178,10 @@ io.on("connection", function(socket) {
           changed: timeoutChangeCallback
         });
         console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
-        socket.emit("error message", { msg: "Incorrect auth answer." });
+        socket.emit("alert message", { msg: "Incorrect auth answer.", alertClass: "error" });
       }
     } else {
-      socket.emit("error message", { msg: "You are timed out." });
+      socket.emit("alert message", { msg: "You are timed out.", alertClass: "error" });
     }
   });
 
@@ -184,10 +189,11 @@ io.on("connection", function(socket) {
     socket.on(t.socketEvent, function(data) {
       transactions[t.socketHandler](me, data, function(err, info) {
         if(err) {
-          return socket.emit("error message", { msg: err });
+          return socket.emit("alert message", { msg: err, alertClass: "error" });
         }
         console.log("Transaction for", me.name + ":", info);
         io.emit("update", people.all());
+        socket.emit("alert message", { msg: info, alertClass: "info" });
         socket.emit("multiplier", me.multiplier);
       });
     });
@@ -197,7 +203,8 @@ io.on("connection", function(socket) {
     var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
     if(sanitizedMsg) {
       console.log("Chat message received from", me.name);
-      var messageObj = { sender: me.name, text: sanitizedMsg, time: util.getCurrentTime() };
+      var todayString = (new Date()).toDateString();
+      var messageObj = { sender: me.name, text: sanitizedMsg, time: todayString + " " + util.getCurrentTime() };
       messages.add(messageObj, function(err) {
         if(err) {
           return console.err("Error saving message from", me.name);
@@ -290,6 +297,23 @@ console.log("Server running at " + config.host + ":" + config.port);
 var lastStandingsPost = "";
 
 setInterval(function() {
+  if(config.jackpot) {
+    var person = people.at(parseInt(Math.random() * people.count()));
+    person.metapoints += config.jackpot;
+    io.emit("update", {
+      collection: people.all().collection,
+      changed: {
+        time: util.getCurrentTime(),
+        name: person.name,
+        changer: "The Jackpot",
+        desc: "increased",
+        amount: config.jackpot,
+        reason: "being the lucky winner"
+      }
+    });
+    console.log("Jackpot increased", person.name, "'s metapoints by", config.jackpot);
+  }
+
   people.save(function(err) {
     if(err) {
       return console.error("Error saving data:", err);

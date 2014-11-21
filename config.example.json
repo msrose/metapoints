@@ -4,6 +4,7 @@
   "saveFreqInMins": 5,
   "pointChangeIntervalInSec": 10,
   "incorrectAuthTimeoutInSec": 60,
+  "jackpot": 500,
   "host": "localhost",
   "port": 1338,
   "authQuestionsFile": "./authquestions.json",

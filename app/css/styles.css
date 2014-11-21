@@ -12,7 +12,6 @@ body {
   margin: 0;
   min-width: 1200px;
   min-height: 600px;
-  border-bottom: 1px solid dodgerblue;
 }
 
 .content {
@@ -81,8 +80,12 @@ button {
   display: block;
 }
 
-.error {
+.alert.error {
   color: red;
+}
+
+.alert.info {
+  color: blue;
 }
 
 .point-changes {
@@ -99,9 +102,11 @@ button {
 .transactions {
   float: left;
   border-right: 1px solid dodgerblue;
+  border-bottom: 1px solid dodgerblue;
   height: 100%;
   padding: 0px 10px;
   margin: 0;
+  background-color: skyblue;
 }
 
 .transactions .group {
@@ -142,6 +147,7 @@ button {
   height: 100%;
   width: 300px;
   border-left: 1px solid dodgerblue;
+  background-color: skyblue;
 }
 
 .chat .message-input {
@@ -151,6 +157,7 @@ button {
   left: 0;
   padding-left: 5px;
   border-top: 1px solid dodgerblue;
+  border-bottom: 1px solid dodgerblue;
   padding-top: 5px;
   padding-bottom: 5px;
   height: 5%;
@@ -209,6 +216,16 @@ select {
   color: gray;
 }
 
+.muted-timestamp {
+  font-size: 12px;
+  color: gray;
+  margin-right: 5px;
+  font-family: monospace;
+  width: 10%;
+  float: left;
+  line-height: 27px;
+}
+
 #shortcuts ul {
   list-style-type: none;
   margin: 0;
@@ -219,4 +236,22 @@ select {
   display: inline;
   padding-right: 10px;
   white-space: nowrap;
+}
+
+.update-feed ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.update-feed li {
+  margin: 0;
+  padding: 0;
+  clear: both;
+}
+
+.update-item {
+  width: 85%;
+  float: left;
 }
