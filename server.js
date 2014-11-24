@@ -10,6 +10,7 @@ var db = require("./lib/filedb");
 var util = require("./lib/util");
 var transactionHandler = require("./lib/transactions");
 var serverHandler = require("./lib/serverhandler");
+var schemas = require("./lib/schemas");
 
 var defaults = {
   pointsFile: "./points.json",
@@ -48,18 +49,18 @@ for(var key in config.integrations) {
   integrationsList.push(config.integrations[key].name);
 }
 
-var people = db(config.pointsFile, {
-  required: ["ip", "name"],
-  optional: { metapoints: 500, powerLevel: 0, active: 0, authQuestion: null, timeout: 0, lastUpdatedBy: null, multiplier: 1 },
-  persist: ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier"]
-}, function(err) {
-  console.error("Failed to init people:", err);
+var people = db(config.pointsFile, schemas.people(), function(err, info) {
+  if(err) {
+    return console.error("Failed to init people:", err);
+  }
+  console.log(info);
 });
 
-var messages = db(config.messagesFile, {
-  required: ["sender", "text", "time"]
-}, function(err) {
-  console.error("Failed to init messages:", err);
+var messages = db(config.messagesFile, schemas.messages(), function(err, info) {
+  if(err) {
+    return console.error("Failed to init messages:", err);
+  }
+  console.log(info);
 });
 
 var server = http.createServer(buildServerHandler()).listen(config.port, config.host);
@@ -99,7 +100,6 @@ function getCost(amount) {
 function changeMetapoints(data, requester, callback) {
   callback = callback || function() {};
   if(data.name !== requester.name) {
-    console.log("Changing metapoints:", requester.name, "changes", data.name, data.type, data.size);
     var person = people.findBy("name", data.name);
 
     if(person) {
@@ -108,6 +108,7 @@ function changeMetapoints(data, requester, callback) {
       if(cost > 0 && requester.metapoints < cost) {
         return callback("Insufficient metapoints.");
       }
+      console.log("Changing metapoints:", requester.name, "changes", data.name, data.type, data.size);
       requester.metapoints -= cost;
       person.metapoints += data.type === "inc" ? amount : -amount;
       person.lastUpdatedBy = requester.name;
@@ -156,13 +157,13 @@ io.on("connection", function(socket) {
   setAuthQuestion(me);
   timeoutStartCallback();
   me.active++;
-  io.emit("update", people.all());
+  io.emit("update", people.collection());
 
   socket.on("disconnect", function() {
     console.log("Socket disconnected", ip);
     if(me) {
       me.active--;
-      io.emit("update", people.all());
+      io.emit("update", people.collection());
     }
   });
 
@@ -178,7 +179,7 @@ io.on("connection", function(socket) {
             return socket.emit("alert message", getAlertMessage("error", "Could not update metapoints: " + err));
           }
           io.emit("update", {
-            collection: people.all().collection,
+            collection: people.all(),
             changed: {
               time: util.getCurrentTime(),
               name: data.name,
@@ -220,7 +221,7 @@ io.on("connection", function(socket) {
             return socket.emit("alert message", getAlertMessage("error", err));
           }
           console.log("Transaction for", me.name + ":", info);
-          io.emit("update", people.all());
+          io.emit("update", people.collection());
           socket.emit("alert message", getAlertMessage("info", info));
         });
       }
@@ -270,7 +271,7 @@ function buildServerHandler() {
             res.writeHead(500, { "Content-Type": "text/plain" });
             return res.end("Could not register new person.");
           }
-          io.emit("update", people.all());
+          io.emit("update", people.collection());
           res.writeHead(302, { "Content-Type": "text/plain", "Location": "/" });
           res.end("Registered " + body + " at " + ip);
         });
@@ -299,7 +300,7 @@ function buildServerHandler() {
         person.metapoints += integration.amount;
         person.lastUpdatedBy = integration.name;
         io.emit("update", {
-          collection: people.all().collection,
+          collection: people.all(),
           changed: {
             time: util.getCurrentTime(),
             name: person.name,
@@ -329,7 +330,7 @@ setInterval(function() {
     var person = people.at(parseInt(Math.random() * people.count()));
     person.metapoints += config.jackpot;
     io.emit("update", {
-      collection: people.all().collection,
+      collection: people.all(),
       changed: {
         time: util.getCurrentTime(),
         name: person.name,
@@ -359,7 +360,7 @@ setInterval(function() {
   if(config.subscribers.length > 0) {
     var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
     var infoList = [];
-    people.all().collection.forEach(function(person) {
+    people.all().forEach(function(person) {
       infoList.push(person.name + ": " + person.metapoints);
     });
     text += infoList.join(", ");
