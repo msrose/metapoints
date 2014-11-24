@@ -16,8 +16,10 @@ var defaults = {
   messagesFile: "./messages.json",
   saveFreqInMins: 1,
   pointChangeIntervalInSec: 10,
+  amountTimeoutFactor: 0.05,
   incorrectAuthTimeoutInSec: 60,
   jackpot: 500,
+  changeCostFactor: 0.1,
   host: "localhost",
   port: 1338,
   authQuestionsFile: false,
@@ -82,6 +84,18 @@ function setAuthQuestion(person) {
   }
 }
 
+function getAmount(size, multiplier, useMultiplier) {
+  var amount = util.getPointsAmount(size);
+  if(useMultiplier && multiplier > 1) {
+    amount *= multiplier;
+  }
+  return amount;
+}
+
+function getCost(amount) {
+  return Math.round(amount * config.changeCostFactor);
+}
+
 function changeMetapoints(data, requester, callback) {
   callback = callback || function() {};
   if(data.name !== requester.name) {
@@ -89,11 +103,8 @@ function changeMetapoints(data, requester, callback) {
     var person = people.findBy("name", data.name);
 
     if(person) {
-      var amount = util.getPointsAmount(data.size);
-      if(data.useMultiplier && requester.multiplier > 1) {
-        amount *= requester.multiplier;
-      }
-      var cost = Math.round(amount / 10);
+      var amount = getAmount(data.size, requester.multiplier, data.useMultiplier);
+      var cost = getCost(amount);
       if(cost > 0 && requester.metapoints < cost) {
         return callback("Insufficient metapoints.");
       }
@@ -175,7 +186,7 @@ io.on("connection", function(socket) {
               reason: ""
             }
           });
-          timeoutPerson(me, config.pointChangeIntervalInSec, {
+          timeoutPerson(me, config.pointChangeIntervalInSec + Math.round(amount * config.amountTimeoutFactor), {
             started: timeoutStartCallback,
             changed: timeoutChangeCallback
           });
@@ -190,6 +201,12 @@ io.on("connection", function(socket) {
       }
     } else {
       socket.emit("alert message", getAlertMessage("error", "You are timed out."));
+    }
+  });
+
+  socket.on("request cost", function(data, ack) {
+    if(typeof(data) === "object") {
+      ack(getCost(getAmount(data.size, data.multiplier, data.useMultiplier)));
     }
   });
 
@@ -321,7 +338,7 @@ setInterval(function() {
         reason: "being the lucky winner"
       }
     });
-    console.log("Jackpot increased", person.name, "'s metapoints by", config.jackpot);
+    console.log("Jackpot increased", person.name + "'s metapoints by", config.jackpot);
   }
 
   people.save(function(err) {

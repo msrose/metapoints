@@ -4,14 +4,22 @@ angular.module("metapoints").factory("socket", ["$rootScope",
 
     return {
       on: function(name, callback) {
-        socket.on(name, function(data) {
+        socket.on(name, function() {
+          var args = arguments;
           $rootScope.$apply(function() {
-            callback(data);
+            callback.apply(socket, args);
           });
         });
       },
-      emit: function(name, data) {
-        socket.emit(name, data);
+      emit: function(name, data, callback) {
+        socket.emit(name, data, function() {
+          if(callback) {
+            var args = arguments;
+            $rootScope.$apply(function() {
+              callback.apply(socket, args);
+            });
+          }
+        });
       }
     };
   }

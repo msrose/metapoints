@@ -30,15 +30,14 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
     });
 
     $scope.$watch("[selectedPointSize,useMultiplier,multiplier]", function() {
-      var selectedPointValue;
-      for(var i in $scope.pointSizes) {
-        var currentSize = $scope.pointSizes[i];
-        if(currentSize.name === $scope.selectedPointSize) {
-          selectedPointValue = currentSize.value;
-          break;
-        }
-      }
-      $scope.cost = Math.round(selectedPointValue * ($scope.useMultiplier ? $scope.multiplier : 1) / 10);
+      var costData = {
+        size: $scope.selectedPointSize,
+        useMultiplier: $scope.useMultiplier,
+        multiplier: $scope.multiplier
+      };
+      socket.emit("request cost", costData, function(cost) {
+        $scope.cost = cost;
+      });
     }, true);
 
     $scope.shortcuts = [
