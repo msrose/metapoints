@@ -8,7 +8,7 @@ var truncate = require("truncate");
 
 var db = require("./lib/filedb");
 var util = require("./lib/util");
-var transactions = require("./lib/transactions");
+var transactionHandler = require("./lib/transactions");
 var serverHandler = require("./lib/serverhandler");
 
 var defaults = {
@@ -30,6 +30,8 @@ var config = fs.existsSync(configFile) ? require(configFile) : {};
 util.merge(config, defaults);
 
 console.log("Config initialized:", config);
+
+var transactions = transactionHandler(config.transactions || {});
 
 var authQuestions = config.authQuestionsFile ? require(config.authQuestionsFile).questions : null;
 if(authQuestions) {
@@ -107,11 +109,19 @@ function changeMetapoints(data, requester, callback) {
   }
 }
 
+function getAlertMessage(type, text) {
+  return { alertClass: type, msg: text };
+}
+
 io.on("connection", function(socket) {
   var ip = socket.handshake.address;
   var me = people.findBy("ip", ip);
 
   console.log("Socket connection established", ip);
+
+  if(!me) {
+    return console.error("Unknown person at IP", ip);
+  }
 
   var timeoutStartCallback = function() {
     var timeoutData = { timeout: me.timeout };
@@ -125,21 +135,19 @@ io.on("connection", function(socket) {
     io.sockets.in(me.ip).emit("timeout change", { timeout: me.timeout });
   };
 
-  if(me) {
-    socket.join(me.ip);
-    socket.emit("me data", { name: me.name });
-    socket.emit("multiplier", me.multiplier);
-    socket.emit("transaction list", transactions.all());
-    if(integrationsList.length > 0) {
-      socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
-    }
-    socket.emit("saved chat", messages.all());
-
-    setAuthQuestion(me);
-    timeoutStartCallback();
-    me.active++;
-    io.emit("update", people.all());
+  socket.join(me.ip);
+  socket.emit("me data", { name: me.name });
+  socket.emit("multiplier", me.multiplier);
+  socket.emit("transaction list", transactions.all());
+  if(integrationsList.length > 0) {
+    socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
   }
+  socket.emit("saved chat", messages.all());
+
+  setAuthQuestion(me);
+  timeoutStartCallback();
+  me.active++;
+  io.emit("update", people.all());
 
   socket.on("disconnect", function() {
     console.log("Socket disconnected", ip);
@@ -150,11 +158,11 @@ io.on("connection", function(socket) {
   });
 
   socket.on("change metapoints", function(data) {
-    if(me && me.timeout === 0) {
+    if(typeof(data) === "object" && me && me.timeout === 0) {
       if(!authQuestions || data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
         changeMetapoints(data, me, function(err, amount) {
           if(err) {
-            return socket.emit("alert message", { msg: "Could not update metapoints: " + err, alertClass: "error" });
+            return socket.emit("alert message", getAlertMessage("error", "Could not update metapoints: " + err));
           }
           io.emit("update", {
             collection: people.all().collection,
@@ -178,30 +186,32 @@ io.on("connection", function(socket) {
           changed: timeoutChangeCallback
         });
         console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
-        socket.emit("alert message", { msg: "Incorrect auth answer.", alertClass: "error" });
+        socket.emit("alert message", getAlertMessage("error", "Incorrect auth answer."));
       }
     } else {
-      socket.emit("alert message", { msg: "You are timed out.", alertClass: "error" });
+      socket.emit("alert message", getAlertMessage("error", "You are timed out."));
     }
   });
 
   transactions.all().forEach(function(t) {
     socket.on(t.socketEvent, function(data) {
-      transactions[t.socketHandler](me, data, function(err, info) {
-        if(err) {
-          return socket.emit("alert message", { msg: err, alertClass: "error" });
-        }
-        console.log("Transaction for", me.name + ":", info);
-        io.emit("update", people.all());
-        socket.emit("alert message", { msg: info, alertClass: "info" });
-        socket.emit("multiplier", me.multiplier);
-      });
+      if(me) {
+        transactions[t.socketHandler](me, data, function(err, info) {
+          if(err) {
+            return socket.emit("alert message", getAlertMessage("error", err));
+          }
+          console.log("Transaction for", me.name + ":", info);
+          io.emit("update", people.all());
+          socket.emit("alert message", getAlertMessage("info", info));
+          socket.emit("multiplier", me.multiplier);
+        });
+      }
     });
   });
 
   socket.on("send chat message", function(message) {
     var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
-    if(sanitizedMsg) {
+    if(me && sanitizedMsg) {
       console.log("Chat message received from", me.name);
       var todayString = (new Date()).toDateString();
       var messageObj = { sender: me.name, text: sanitizedMsg, time: todayString + " " + util.getCurrentTime() };

@@ -8,6 +8,13 @@
   "host": "localhost",
   "port": 1338,
   "authQuestionsFile": "./authquestions.json",
+  "transactions": {
+    "powerLevelCostFactor": 1000,
+    "powerLevelCashInFactor": 750,
+    "multiplierCost": 5,
+    "multiplierCashInValue": 4,
+    "doubleOrNothingChanceFactor": 2
+  },
   "subscribers": [
     {
       "name": "Example subscriber name",

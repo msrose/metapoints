@@ -19,7 +19,7 @@ angular.module("metapoints").controller("notifications", ["$rootScope", "$scope"
         notification.notify({
           title: "Metapoints updated",
           body: data.changed.changer + " " + data.changed.desc + " your metapoints by " + data.changed.amount,
-          dismiss: 15000,
+          dismiss: 5000,
           timeout: 30000
         }, function(notification) {
           notification.onclick = function(e) {

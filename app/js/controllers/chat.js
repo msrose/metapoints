@@ -20,14 +20,17 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
       }
     });
 
+    function isTagged(name, sender, text) {
+      return sender !== name && text.toUpperCase().indexOf("@" + name.toUpperCase()) >= 0;
+    }
+
     socket.on("chat message", function(data) {
       $scope.messages.push(data);
-
-      if(!notification.timedOut() && data.sender !== identity.name() && data.text.toUpperCase().indexOf("@" + identity.name().toUpperCase()) >= 0) {
+      if(!notification.timedOut() && isTagged(identity.name(), data.sender, data.text)) {
         notification.notify({
           title: "Message from " + data.sender,
           body: data.text,
-          dismiss: 15000,
+          dismiss: 5000,
           timeout: 15000
         }, function(notification) {
           notification.onclick = function(e) {
