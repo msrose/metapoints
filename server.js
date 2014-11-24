@@ -152,7 +152,7 @@ io.on("connection", function(socket) {
   if(integrationsList.length > 0) {
     socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
   }
-  socket.emit("saved chat", messages.all());
+  socket.emit("saved chat", messages.collection());
 
   setAuthQuestion(me);
   timeoutStartCallback();
