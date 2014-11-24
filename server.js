@@ -147,8 +147,6 @@ io.on("connection", function(socket) {
   };
 
   socket.join(me.ip);
-  socket.emit("me data", { name: me.name });
-  socket.emit("multiplier", me.multiplier);
   socket.emit("transaction list", transactions.all());
   if(integrationsList.length > 0) {
     socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
@@ -166,6 +164,10 @@ io.on("connection", function(socket) {
       me.active--;
       io.emit("update", people.all());
     }
+  });
+
+  socket.on("request me data", function(data, ack) {
+    ack(me);
   });
 
   socket.on("change metapoints", function(data) {
@@ -220,7 +222,6 @@ io.on("connection", function(socket) {
           console.log("Transaction for", me.name + ":", info);
           io.emit("update", people.all());
           socket.emit("alert message", getAlertMessage("info", info));
-          socket.emit("multiplier", me.multiplier);
         });
       }
     });

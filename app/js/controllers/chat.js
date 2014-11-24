@@ -1,5 +1,5 @@
-angular.module("metapoints").controller("chat", ["$scope", "socket", "notification", "identity",
-  function($scope, socket, notification, identity) {
+angular.module("metapoints").controller("chat", ["$scope", "socket", "notification",
+  function($scope, socket, notification) {
     $scope.messages = [];
     $scope.savedChatLoaded = false;
 
@@ -26,18 +26,20 @@ angular.module("metapoints").controller("chat", ["$scope", "socket", "notificati
 
     socket.on("chat message", function(data) {
       $scope.messages.push(data);
-      if(!notification.timedOut() && isTagged(identity.name(), data.sender, data.text)) {
-        notification.notify({
-          title: "Message from " + data.sender,
-          body: data.text,
-          dismiss: 5000,
-          timeout: 15000
-        }, function(notification) {
-          notification.onclick = function(e) {
-            window.focus();
-          };
-        });
-      }
+      socket.emit("request me data", null, function(me) {
+        if(!notification.timedOut() && isTagged(me.name, data.sender, data.text)) {
+          notification.notify({
+            title: "Message from " + data.sender,
+            body: data.text,
+            dismiss: 5000,
+            timeout: 15000
+          }, function(notification) {
+            notification.onclick = function(e) {
+              window.focus();
+            };
+          });
+        }
+      });
     });
 
     $scope.sendChatMessage = function() {

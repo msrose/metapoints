@@ -1,12 +1,15 @@
-angular.module("metapoints").controller("metapoints", ["$scope", "socket", "pointSizes", "identity",
-  function($scope, socket, pointSizes, identity) {
+angular.module("metapoints").controller("metapoints", ["$scope", "socket", "pointSizes",
+  function($scope, socket, pointSizes) {
     socket.on("update", function(data) {
-      $scope.me = identity.name();
-      $scope.pointsData = data.collection;
-      $scope.selectedName = $scope.selectedName || identity.name();
-      for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === identity.name(); i++) {
-        $scope.selectedName = $scope.pointsData[i].name;
-      }
+      socket.emit("request me data", null, function(me) {
+        $scope.me = me.name;
+        $scope.multiplier = me.multiplier;
+        $scope.pointsData = data.collection;
+        $scope.selectedName = $scope.selectedName || $scope.me;
+        for(var i = 0; i < $scope.pointsData.length && $scope.selectedName === $scope.me; i++) {
+          $scope.selectedName = $scope.pointsData[i].name;
+        }
+      });
     });
 
     $scope.timeout = 0;
@@ -18,10 +21,6 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
     socket.on("timeout change", function(data) {
       $scope.timeout = data.timeout;
       if(data.auth) $scope.authQuestion = data.auth;
-    });
-
-    socket.on("multiplier", function(data) {
-      $scope.multiplier = data;
     });
 
     pointSizes.async().then(function(data) {

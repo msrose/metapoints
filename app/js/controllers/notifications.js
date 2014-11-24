@@ -1,5 +1,5 @@
-angular.module("metapoints").controller("notifications", ["$rootScope", "$scope", "socket", "notification", "identity",
-  function($rootScope, $scope, socket, notification, identity) {
+angular.module("metapoints").controller("notifications", ["$rootScope", "$scope", "socket", "notification",
+  function($rootScope, $scope, socket, notification) {
     $scope.notificationsEnabled = Notification ? Notification.permission === "granted" : false;
 
     $scope.enableNotifications = function() {
@@ -15,18 +15,20 @@ angular.module("metapoints").controller("notifications", ["$rootScope", "$scope"
     };
 
     socket.on("update", function(data) {
-      if(!notification.timedOut() && data.changed && data.changed.name === identity.name()) {
-        notification.notify({
-          title: "Metapoints updated",
-          body: data.changed.changer + " " + data.changed.desc + " your metapoints by " + data.changed.amount,
-          dismiss: 5000,
-          timeout: 30000
-        }, function(notification) {
-          notification.onclick = function(e) {
-            window.focus();
-          };
-        });
-      }
+      socket.emit("request me data", null, function(me) {
+        if(!notification.timedOut() && data.changed && data.changed.name === me.name) {
+          notification.notify({
+            title: "Metapoints updated",
+            body: data.changed.changer + " " + data.changed.desc + " your metapoints by " + data.changed.amount,
+            dismiss: 5000,
+            timeout: 30000
+          }, function(notification) {
+            notification.onclick = function(e) {
+              window.focus();
+            };
+          });
+        }
+      });
     });
   }
 ]);
