@@ -1,8 +1,8 @@
-var schemas = require("./lib/schemas");
+var schemas = require("./schemas.json").schemas;
 
 var saveFile = process.argv[2] || "./points.json";
 
-var people = require("./lib/filedb")(saveFile, schemas.people(), function(err) {
+var people = require("./lib/filedb")(saveFile, schemas.people, function(err) {
   if(err) {
     console.error("Failed to init people:", err);
   }

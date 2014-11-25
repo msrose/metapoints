@@ -10,7 +10,7 @@ var db = require("./lib/filedb");
 var util = require("./lib/util");
 var transactionHandler = require("./lib/transactions");
 var serverHandler = require("./lib/serverhandler");
-var schemas = require("./lib/schemas");
+var schemas = require("./schemas.json").schemas;
 
 var defaults = {
   pointsFile: "./points.json",
@@ -49,14 +49,14 @@ for(var key in config.integrations) {
   integrationsList.push(config.integrations[key].name);
 }
 
-var people = db(config.pointsFile, schemas.people(), function(err, info) {
+var people = db(config.pointsFile, schemas.people, function(err, info) {
   if(err) {
     return console.error("Failed to init people:", err);
   }
   console.log(info);
 });
 
-var messages = db(config.messagesFile, schemas.messages(), function(err, info) {
+var messages = db(config.messagesFile, schemas.messages, function(err, info) {
   if(err) {
     return console.error("Failed to init messages:", err);
   }
@@ -329,6 +329,7 @@ setInterval(function() {
   if(config.jackpot) {
     var person = people.at(parseInt(Math.random() * people.count()));
     person.metapoints += config.jackpot;
+    person.lastUpdatedBy = "The Jackpot";
     io.emit("update", {
       collection: people.all(),
       changed: {
