@@ -10,12 +10,12 @@ body {
   background-color: lightblue;
   padding: 0;
   margin: 0;
-  min-width: 1200px;
+  min-width: 1250px;
   min-height: 600px;
 }
 
 .content {
-  width: 600px;
+  width: 650px;
   padding: 0 30px;
   float: left;
 }

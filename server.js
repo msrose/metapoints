@@ -20,6 +20,7 @@ var defaults = {
   amountTimeoutFactor: 0.05,
   incorrectAuthTimeoutInSec: 60,
   jackpot: 500,
+  jackpotIntervalInMins: 10,
   changeCostFactor: 0.1,
   host: "localhost",
   port: 1338,
@@ -81,7 +82,7 @@ function timeoutPerson(person, timeout, callbacks) {
 
 function setAuthQuestion(person) {
   if(authQuestions) {
-    person.authQuestion = parseInt(Math.random() * authQuestions.length);
+    person.authQuestion = Math.floor(Math.random() * authQuestions.length);
   }
 }
 
@@ -323,11 +324,30 @@ function buildServerHandler() {
 
 console.log("Server running at " + config.host + ":" + config.port);
 
-var lastStandingsPost = "";
-
 setInterval(function() {
-  if(config.jackpot) {
-    var person = people.at(parseInt(Math.random() * people.count()));
+  if(config.jackpot && people.count() > 0) {
+    var luckMap = {};
+    var totalLuck = 0;
+    people.all().forEach(function(person) {
+      totalLuck += person.luck;
+      if(person.active > 0) {
+        totalLuck += Math.ceil(person.luck / 2);
+      }
+      luckMap[totalLuck] = person;
+    });
+    var randomIndex = Math.floor(Math.random() * totalLuck) + 1;
+
+    var luckMapNames = [];
+    for(var prop in luckMap) {
+      luckMapNames.push(prop + ": " + luckMap[prop].name);
+    }
+    console.log("Generated luck map {", luckMapNames.join(", "), "} with random index", randomIndex);
+
+    while(!(randomIndex in luckMap)) {
+      randomIndex++;
+    }
+
+    var person = luckMap[randomIndex];
     person.metapoints += config.jackpot;
     person.lastUpdatedBy = "The Jackpot";
     io.emit("update", {
@@ -343,12 +363,17 @@ setInterval(function() {
     });
     console.log("Jackpot increased", person.name + "'s metapoints by", config.jackpot);
   }
+}, config.jackpotIntervalInMins * 60 * 1000);
 
+var lastStandingsPost = "";
+
+setInterval(function() {
+  console.log(util.getCurrentTime(), "Preparing to save...");
   people.save(function(err) {
     if(err) {
       return console.error("Error saving data:", err);
     }
-    console.log("Data saved to", config.pointsFile);
+    console.log("People saved to", config.pointsFile);
   });
 
   messages.save(function(err) {

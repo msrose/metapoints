@@ -23,7 +23,7 @@
       <div ng-show="!collapsed">
         <h2>Store</h2>
         <div class="group" ng-repeat="t in transactionList">
-          {{t.description}}: <button ng-click="emitTransaction(t.socketEvent)">{{t.title}}</button>
+          {{t.description}}:<br><button ng-click="emitTransaction(t.socketEvent)">{{t.title}}</button>
         </div>
       </div>
     </div>
@@ -40,6 +40,7 @@
             <th>Metapoints</th>
             <th>Power Level</th>
             <th>Multiplier</th>
+            <th>Luck</th>
             <th>Last Updated By</th>
           </tr>
           <tr ng-repeat="p in pointsData | orderBy:['multiplier', 'powerLevel', 'metapoints']:true">
@@ -48,6 +49,7 @@
             <td class="align-right">{{p.metapoints}}</td>
             <td>{{p.powerLevel}}<br><span class="power-bar" style="width: {{p.powerBarSize}}%"></span></td>
             <td>x{{p.multiplier}}</td>
+            <td>{{p.luck}}</p>
             <td>{{p.lastUpdatedBy}}</td>
           </tr>
         </table>

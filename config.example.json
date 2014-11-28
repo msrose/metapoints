@@ -6,6 +6,7 @@
   "amountTimeoutFactor": 0.05,
   "incorrectAuthTimeoutInSec": 60,
   "jackpot": 500,
+  "jackpotIntervalInMins": 10,
   "changeCostFactor": 0.1,
   "host": "localhost",
   "port": 1338,
@@ -15,7 +16,10 @@
     "powerLevelCashInFactor": 750,
     "multiplierCost": 5,
     "multiplierCashInValue": 4,
-    "doubleOrNothingChanceFactor": 2
+    "doubleOrNothingChanceFactor": 25,
+    "luckCostFactor": 500,
+    "luckIncreaseFactor": 5,
+    "luckMaxIncrease": 50
   },
   "subscribers": [
     {

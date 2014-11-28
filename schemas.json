@@ -9,9 +9,10 @@
         "authQuestion": null,
         "timeout": 0,
         "lastUpdatedBy": null,
-        "multiplier": 1
+        "multiplier": 1,
+        "luck": 1
       },
-      "persist": ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier"]
+      "persist": ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier", "luck"]
     },
     "messages": {
       "required": ["sender", "text", "time"]

@@ -15,6 +15,7 @@ people.all().forEach(function(person) {
   person.powerLevel = 0;
   person.lastUpdatedBy = "";
   person.multiplier = 1;
+  person.luck = 1;
   console.log("Resetting", person.name, person.ip);
 });
 
