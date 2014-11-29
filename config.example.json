@@ -14,8 +14,8 @@
   "transactions": {
     "powerLevelCostFactor": 1000,
     "powerLevelCashInFactor": 750,
-    "multiplierCost": 5,
-    "multiplierCashInValue": 4,
+    "multiplierCostFactor": 5,
+    "multiplierCashInFactor": 4,
     "doubleOrNothingChanceFactor": 25,
     "luckCostFactor": 500,
     "luckIncreaseFactor": 5,

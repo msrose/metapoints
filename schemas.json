@@ -3,7 +3,7 @@
     "people": {
       "required": ["ip", "name"],
       "optional": {
-        "metapoints": 500,
+        "metapoints": 10000,
         "powerLevel": 0,
         "active": 0,
         "authQuestion": null,

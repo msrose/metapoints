@@ -11,11 +11,11 @@ var people = db(config.pointsFile, schemas.people, function(err) {
 });
 
 people.all().forEach(function(person) {
-  person.metapoints = 0;
-  person.powerLevel = 0;
-  person.lastUpdatedBy = "";
-  person.multiplier = 1;
-  person.luck = 1;
+  person.metapoints = schemas.people.optional.metapoints;
+  person.powerLevel = schemas.people.optional.powerLevel;
+  person.lastUpdatedBy = schemas.people.optional.lastUpdatedBy;
+  person.multiplier = schemas.people.optional.multiplier;
+  person.luck = schemas.people.optional.luck;
   console.log("Resetting", person.name, person.ip);
 });
 

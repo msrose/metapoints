@@ -36,6 +36,7 @@ util.merge(config, defaults);
 console.log("Config initialized:", config);
 
 var transactions = transactionHandler(config.transactions || {});
+console.log("Initialized transactions:", transactions.config);
 
 var authQuestions = config.authQuestionsFile ? require(config.authQuestionsFile).questions : null;
 if(authQuestions) {
