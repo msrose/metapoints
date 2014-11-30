@@ -16,7 +16,7 @@ angular.module("metapoints").controller("pointsTable", ["$scope", "socket",
         if(maxPowerLevel === 0) {
           person.powerBarSize = 0;
         } else {
-          person.powerBarSize = parseInt(person.powerLevel / maxPowerLevel * 100);
+          person.powerBarSize = Math.max(parseInt(person.powerLevel / maxPowerLevel * 100), 1);
         }
       }
     });

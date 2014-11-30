@@ -18,7 +18,7 @@
     <script src="controllers/chat.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
-    <div class="transactions" ng-controller="transactions" style="width: {{ collapsed ? 20 : 200 }}px">
+    <div class="transactions" ng-controller="transactions" ng-style="{ width: collapsed ? '20px' : '200px' }">
       <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
       <div ng-show="!collapsed">
         <h2>Store</h2>
@@ -45,9 +45,9 @@
           </tr>
           <tr ng-repeat="p in pointsData | orderBy:['multiplier', 'powerLevel', 'metapoints']:true">
             <td class="align-right">{{$index + 1}}</td>
-            <td class="{{p.active > 0 ? 'active' : ''}}">{{p.name}}</td>
+            <td ng-class="{ active: p.active }">{{p.name}}</td>
             <td class="align-right">{{p.metapoints}}</td>
-            <td>{{p.powerLevel}}<br><span class="power-bar" style="width: {{p.powerBarSize}}%"></span></td>
+            <td>{{p.powerLevel}}<br><span class="power-bar" ng-style="{ width: p.powerBarSize + '%' }"></span></td>
             <td>x{{p.multiplier}}</td>
             <td>{{p.luck}}</td>
             <td>{{p.lastUpdatedBy}}</td>
@@ -55,8 +55,12 @@
         </table>
       </div>
       <div class="point-changes" ng-controller="metapoints" ng-show="pointsData.length > 1">
-        <div class="group">Point Magnitude: <select id="pointDropdown" ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select></div>
-        <div class="group">Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select></div>
+        <div class="group">
+          Point Magnitude: <select id="pointDropdown" ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select>
+        </div>
+        <div class="group">
+          Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select>
+        </div>
         <div class="group">
           <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
           <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
@@ -85,18 +89,18 @@
         </div>
       </div>
       <div ng-controller="alert">
-        <p class="alert {{alertClass}}" ng-show="!!alertMessage">{{alertMessage}}</p>
+        <p ng-class="'alert ' + alertClass" ng-show="!!alertMessage">{{alertMessage}}</p>
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
-          <li ng-repeat="change in updateFeed track by $index"><div class="muted-timestamp">{{change.time}}</div><div class="update-item"><b>{{change.changer}}</b> <span class="change {{change.desc}}">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</div></li>
+          <li ng-repeat="change in updateFeed track by $index"><div class="muted-timestamp">{{change.time}}</div><div class="update-item"><b>{{change.changer}}</b> <span ng-class="'change ' + change.desc">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</div></li>
         </ul>
       </div>
     </div>
     <div class="chat" ng-controller="chat">
       <h2>Chat</h2>
       <div id="messageList" class="messages">
-        <ul><li ng-repeat="message in messages" title="{{message.time}}"><b>{{message.sender}}</b>: {{message.text}}</li></ul>
+        <ul><li ng-repeat="message in messages track by $index" title="{{message.time}}"><b>{{message.sender}}</b>: {{message.text}}</li></ul>
       </div>
       <div id="messages" class="message-input">
         <input type="text" maxlength="500" id="chat_input" ng-model="chatMessage" ng-keyup="$event.keyCode === 13 && sendChatMessage()">
