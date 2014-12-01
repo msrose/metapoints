@@ -20,7 +20,7 @@
   </head>
   <body ng-app="metapoints">
     <div class="transactions" ng-controller="transactions" ng-style="{ width: collapsed ? '20px' : '200px' }">
-      <span class="collapse-toggle" ng-click="toggleCollapsed()">{{ collapsed ? '&rarr;' : '&larr;' }}</span>
+      <span class="collapse-toggle clickable" ng-click="toggleCollapsed()">{{ collapsed ? '&#8680;' : '&#8678;' }}</span>
       <div ng-show="!collapsed">
         <h2>Store</h2>
         <div class="group" ng-repeat="t in transactionList">
@@ -78,11 +78,6 @@
             <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
             <span class="timeout" ng-show="timeout > 0">{{timeout}}</span>
           </div>
-          <div class="group" ng-show="!!decorations">
-            <span ng-click="toggleDecorations()" class="muted">
-              {{ showDecorations ? 'Hide' : 'Show' }} Decorations
-            </span>
-          </div>
         </div>
         <div class="separate-group small">
           <div class="group" ng-show="multiplier > 1">
@@ -91,6 +86,12 @@
           </div>
           <div class="group">
             Cost: <b>{{cost}}</b> metapoint{{cost != 1 ? 's' : ''}}
+          </div>
+          <div class="group clickable" ng-show="!!decorations" ng-click="toggleDecorations()">
+            <span class="muted">
+              {{ showDecorations ? 'Hide' : 'Show' }} Decorations
+            </span>
+            <span>{{ showDecorations ? '&#8679;' : '&#8681;' }}</span>
           </div>
         </div>
         <div class="separate-group large" ng-show="!!authQuestion">

@@ -268,3 +268,7 @@ select {
   border-color: transparent;
   border-style: solid;
 }
+
+.clickable {
+  cursor: pointer;
+}
