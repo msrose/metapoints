@@ -19,7 +19,8 @@
     "doubleOrNothingChanceFactor": 25,
     "luckCostFactor": 500,
     "luckIncreaseFactor": 5,
-    "luckMaxIncrease": 50
+    "luckMaxIncrease": 50,
+    "decorationsCost": 2500
   },
   "subscribers": [
     {

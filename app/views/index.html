@@ -45,7 +45,9 @@
           </tr>
           <tr ng-repeat="p in pointsData | orderBy:['multiplier', 'powerLevel', 'metapoints']:true">
             <td class="align-right">{{$index + 1}}</td>
-            <td ng-class="{ active: p.active }">{{p.name}}</td>
+            <td ng-class="{ active: p.active > 0, 'person-name': true }">
+              <div class="decor" ng-style="{ 'border-color': p.decorations ? p.decorations.borderColor : 'transparent' }">{{p.name}}</div>
+            </td>
             <td class="align-right">{{p.metapoints}}</td>
             <td>{{p.powerLevel}}<br><span class="power-bar" ng-style="{ width: p.powerBarSize + '%' }"></span></td>
             <td>x{{p.multiplier}}</td>
@@ -74,6 +76,9 @@
           <div class="group">
             Cost: <b>{{cost}}</b> metapoint{{cost != 1 ? 's' : ''}}
           </div>
+          <div class="group" ng-show="!!decorations">
+            Border Color: <input type="text" ng-model="decorations.borderColor" ng-change="changeDecorations()" />
+          </div>
         </div>
         <div class="separate-group large" ng-show="!!authQuestion">
           {{authQuestion}} <input type="text" ng-model="authAnswer" ng-keyup="handleShortcut($event)" autofocus="autofocus" />
@@ -93,14 +98,23 @@
       </div>
       <div class="update-feed" ng-controller="updateFeed">
         <ul>
-          <li ng-repeat="change in updateFeed track by $index"><div class="muted-timestamp">{{change.time}}</div><div class="update-item"><b>{{change.changer}}</b> <span ng-class="'change ' + change.desc">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}</div></li>
+          <li ng-repeat="change in updateFeed track by $index">
+            <div class="muted-timestamp">{{change.time}}</div>
+            <div class="update-item">
+              <b>{{change.changer}}</b> <span ng-class="'change ' + change.desc">{{change.desc}}</span> <b>{{change.name}}</b>'s metapoints by {{change.amount}}{{change.reason ? ' for ' + change.reason : ''}}
+            </div>
+          </li>
         </ul>
       </div>
     </div>
     <div class="chat" ng-controller="chat">
       <h2>Chat</h2>
       <div id="messageList" class="messages">
-        <ul><li ng-repeat="message in messages track by $index" title="{{message.time}}"><b>{{message.sender}}</b>: {{message.text}}</li></ul>
+        <ul>
+          <li ng-repeat="message in messages track by $index" title="{{message.time}}">
+            <b>{{message.sender}}</b>: {{message.text}}
+          </li>
+        </ul>
       </div>
       <div id="messages" class="message-input">
         <input type="text" maxlength="500" id="chat_input" ng-model="chatMessage" ng-keyup="$event.keyCode === 13 && sendChatMessage()">

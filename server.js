@@ -252,6 +252,15 @@ io.on("connection", function(socket) {
       io.emit("chat message", messageObj);
     }
   });
+
+  socket.on("change decorations", function(data) {
+    if(typeof(data) === "object" && me && me.decorations) {
+      if("borderColor" in data) {
+        me.decorations.borderColor = data.borderColor;
+      }
+    }
+    io.emit("update", people.collection());
+  });
 });
 
 function buildServerHandler() {

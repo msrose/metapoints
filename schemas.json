@@ -10,9 +10,10 @@
         "timeout": 0,
         "lastUpdatedBy": null,
         "multiplier": 1,
-        "luck": 1
+        "luck": 1,
+        "decorations": false
       },
-      "persist": ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier", "luck"]
+      "persist": ["ip", "name", "metapoints", "powerLevel", "lastUpdatedBy", "multiplier", "luck", "decorations"]
     },
     "messages": {
       "required": ["sender", "text", "time"]

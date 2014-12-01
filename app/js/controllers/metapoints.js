@@ -3,6 +3,7 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
     socket.on("update", function(data) {
       socket.emit("request me data", null, function(me) {
         $scope.me = me.name;
+        $scope.decorations = me.decorations;
         $scope.multiplier = me.multiplier;
         $scope.pointsData = data.collection;
         $scope.selectedName = $scope.selectedName || $scope.me;
@@ -76,6 +77,10 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
         });
         $scope.authAnswer = "";
       }
+    };
+
+    $scope.changeDecorations = function() {
+      socket.emit("change decorations", $scope.decorations);
     };
   }
 ]);

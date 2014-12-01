@@ -31,6 +31,11 @@ td, th {
   padding: 10px;
 }
 
+td.person-name {
+  padding: 0;
+  height: 50px;
+}
+
 th {
   background-color: lightgray;
 }
@@ -254,4 +259,12 @@ select {
 .update-item {
   width: 85%;
   float: left;
+}
+
+.decor {
+  height: 100%;
+  padding: 5px;
+  border-width: 5px;
+  border-color: transparent;
+  border-style: solid;
 }
