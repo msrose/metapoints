@@ -223,11 +223,11 @@ io.on("connection", function(socket) {
   transactions.all().forEach(function(t) {
     socket.on(t.socketEvent, function(data) {
       if(me) {
-        transactions[t.socketHandler](me, data, function(err, info) {
+        transactions[t.socketHandler](me, data, function(err, info, logInfo) {
           if(err) {
             return socket.emit("alert message", getAlertMessage("error", err));
           }
-          console.log("Transaction for", me.name + ":", info);
+          console.log("Transaction for", me.name + ":", info, logInfo || "");
           io.emit("update", people.collection());
           socket.emit("alert message", getAlertMessage("info", info));
         });
