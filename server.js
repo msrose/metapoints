@@ -127,6 +127,11 @@ function getAlertMessage(type, text) {
   return { alertClass: type, msg: text };
 }
 
+function getChatMessage(sender, text) {
+  var dateString = (new Date()).toDateString();
+  return { sender: sender, text: text, time: dateString + " " + util.getCurrentTime() };
+}
+
 io.on("connection", function(socket) {
   var ip = socket.handshake.address;
   var me = people.findBy("ip", ip);
@@ -152,7 +157,7 @@ io.on("connection", function(socket) {
   socket.join(me.ip);
   socket.emit("transaction list", transactions.all());
   if(integrationsList.length > 0) {
-    socket.emit("chat message", { sender: "metapoints", text: "Active integrations: " + integrationsList.join(", "), time: util.getCurrentTime() });
+    socket.emit("chat message", getChatMessage("metapoints", "Active integrations: " + integrationsList.join(", ")));
   }
   socket.emit("saved chat", messages.collection());
 
@@ -234,8 +239,7 @@ io.on("connection", function(socket) {
     var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
     if(me && sanitizedMsg) {
       console.log("Chat message received from", me.name);
-      var todayString = (new Date()).toDateString();
-      var messageObj = { sender: me.name, text: sanitizedMsg, time: todayString + " " + util.getCurrentTime() };
+      var messageObj = getChatMessage(me.name, sanitizedMsg);
       messages.add(messageObj, function(err) {
         if(err) {
           return console.err("Error saving message from", me.name);
