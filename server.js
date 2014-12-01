@@ -258,8 +258,11 @@ io.on("connection", function(socket) {
       if("borderColor" in data) {
         me.decorations.borderColor = data.borderColor;
       }
+      if("fontFamily" in data) {
+        me.decorations.fontFamily = data.fontFamily;
+      }
+      io.emit("update", people.collection());
     }
-    io.emit("update", people.collection());
   });
 });
 

@@ -82,5 +82,22 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
     $scope.changeDecorations = function() {
       socket.emit("change decorations", $scope.decorations);
     };
+
+    var showDecorationsKey = "metapoints.showDecorations";
+
+    $scope.showDecorations = (function() {
+      if(localStorage && localStorage[showDecorationsKey]) {
+        return localStorage[showDecorationsKey] === "false" ? false : true;
+      } else {
+        return true;
+      }
+    })();
+
+    $scope.toggleDecorations = function() {
+      $scope.showDecorations = !$scope.showDecorations;
+      if(localStorage) {
+        localStorage[showDecorationsKey] = $scope.showDecorations;
+      }
+    };
   }
 ]);
