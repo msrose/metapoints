@@ -1,5 +1,7 @@
 angular.module("metapoints").controller("pointsTable", ["$scope", "socket",
   function($scope, socket) {
+    socket.emit("request update");
+
     socket.on("update", function(data) {
       $scope.pointsData = data.collection;
 

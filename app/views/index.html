@@ -5,12 +5,14 @@
     <link rel="stylesheet" type="text/css" href="styles.css" />
     <script src="https://cdn.socket.io/socket.io-1.1.0.js" type="text/javascript"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js" type="text/javascript"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-route.js" type="text/javascript"></script>
     <script src="app.js" type="text/javascript"></script>
     <script src="factories/socket.js" type="text/javascript"></script>
     <script src="factories/pointSizes.js" type="text/javascript"></script>
     <script src="factories/notification.js" type="text/javascript"></script>
     <script src="directives/decorations.js" type="text/javascript"></script>
     <script src="controllers/pointsTable.js" type="text/javascript"></script>
+    <script src="controllers/graphs.js" type="text/javascript"></script>
     <script src="controllers/metapoints.js" type="text/javascript"></script>
     <script src="controllers/notifications.js" type="text/javascript"></script>
     <script src="controllers/updateFeed.js" type="text/javascript"></script>
@@ -33,30 +35,13 @@
         <button id="enable_notify" ng-click="enableNotifications()" ng-show="!notificationsEnabled">Enable Notifications</button>
       </div>
       <h1>Metapoints</h1>
-      <div ng-controller="pointsTable">
-        <table>
-          <tr>
-            <th>Rank</th>
-            <th>Name</th>
-            <th>Metapoints</th>
-            <th>Power Level</th>
-            <th>Multiplier</th>
-            <th>Luck</th>
-            <th>Last Updated By</th>
-          </tr>
-          <tr ng-repeat="p in pointsData | orderBy:['multiplier', 'powerLevel', 'metapoints']:true">
-            <td class="align-right">{{$index + 1}}</td>
-            <td ng-class="{ active: p.active > 0, 'person-name': true }">
-              <div class="decor" decorations="p.decorations">{{p.name}}</div>
-            </td>
-            <td class="align-right">{{p.metapoints}}</td>
-            <td>{{p.powerLevel}}<br><span class="power-bar" ng-style="{ width: p.powerBarSize + '%' }"></span></td>
-            <td>x{{p.multiplier}}</td>
-            <td>{{p.luck}}</td>
-            <td>{{p.lastUpdatedBy}}</td>
-          </tr>
-        </table>
+      <div class="tabs">
+        <ul>
+          <li><a href="#/table">Table View</a></li>
+          <li><a href="#/graph">Graph View</a></li>
+        </ul>
       </div>
+      <div class="main" ng-view></div>
       <div class="point-changes" ng-controller="metapoints" ng-show="pointsData.length > 1">
         <div class="decorations" ng-show="!!decorations && showDecorations">
           <div class="group">

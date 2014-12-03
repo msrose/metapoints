@@ -178,6 +178,10 @@ io.on("connection", function(socket) {
     ack(me);
   });
 
+  socket.on("request update", function(data) {
+    socket.emit("update", people.collection());
+  });
+
   socket.on("change metapoints", function(data) {
     if(typeof(data) === "object" && me && me.timeout === 0) {
       if(!authQuestions || data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {

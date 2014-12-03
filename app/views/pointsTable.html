@@ -1,0 +1,22 @@
+<table>
+  <tr>
+    <th>Rank</th>
+    <th>Name</th>
+    <th>Metapoints</th>
+    <th>Power Level</th>
+    <th>Multiplier</th>
+    <th>Luck</th>
+    <th>Last Updated By</th>
+  </tr>
+  <tr ng-repeat="p in pointsData | orderBy:['multiplier', 'powerLevel', 'metapoints']:true">
+    <td class="align-right">{{$index + 1}}</td>
+    <td ng-class="{ active: p.active > 0, 'person-name': true }">
+      <div class="decor" decorations="p.decorations">{{p.name}}</div>
+    </td>
+    <td class="align-right">{{p.metapoints}}</td>
+    <td>{{p.powerLevel}}<br><span class="power-bar" ng-style="{ width: p.powerBarSize + '%' }"></span></td>
+    <td>x{{p.multiplier}}</td>
+    <td>{{p.luck}}</td>
+    <td>{{p.lastUpdatedBy}}</td>
+  </tr>
+</table>
