@@ -304,4 +304,75 @@ select {
 
 .graphs {
   background-color: white;
+  overflow: hidden;
+  border: 1px solid black;
+  padding: 5px;
+}
+
+.graphs .person-graph {
+  width: 100%;
+  overflow: hidden;
+  padding-bottom: 10px;
+}
+
+.person-graph .name {
+  width: 20%;
+  float: left;
+  margin-right: 5px;
+}
+
+.person-graph .bars {
+  width: 75%;
+  float: left;
+  border-left: 1px solid black;
+}
+
+.bars .bar {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  display: block;
+  font-size: 12px;
+}
+
+.bar .value {
+  padding-left: 5px;
+}
+
+.bar.metapoints {
+  background-color: dodgerblue;
+}
+
+.bar.powerLevel {
+  background-color: green;
+}
+
+.bar.luck {
+  background-color: yellow;
+}
+
+.bar.multiplier {
+  background-color: red;
+}
+
+.legend {
+  font-size: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 5px;
+  border-top: 1px solid black;
+  text-align: center;
+}
+
+.legend .bar {
+  margin-right: 5px;
+  display: inline-block;
+  width: 50px;
+  text-align: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-bottom: 2px;
+  border-radius: 2px;
+  border: 1px solid gray;
 }

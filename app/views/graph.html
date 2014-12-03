@@ -1,3 +1,11 @@
 <div class="graphs">
-  {{hi}}
+  <div class="person-graph" ng-repeat="p in pointsData">
+    <div decorations="p.decorations" ng-class="{ name: true, decor: true, active: p.active > 0 }">{{p.name}}</div>
+    <div class="bars">
+      <span ng-repeat="prop in barProps" ng-show="barFilters.indexOf(prop) !== -1" ng-class="'bar ' + prop" ng-style="{ width: p[prop + 'BarSize'] + '%' }"><span class="value">{{p[prop]}}</span></span>
+    </div>
+  </div>
+  <div class="legend">
+    <span ng-repeat="prop in barProps" ng-class="'clickable bar ' + prop" ng-click="toggleBarFilter(prop)">{{prop}}</span>
+  </div>
 </div>
