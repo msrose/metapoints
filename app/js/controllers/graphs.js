@@ -30,7 +30,15 @@ angular.module("metapoints").controller("graphs", ["$scope", "socket",
       }
     });
 
-    $scope.barFilters = $scope.barProps.slice();
+    var barFiltersKey = "graphs.barFilters";
+
+    $scope.barFilters = (function() {
+      if(localStorage && localStorage[barFiltersKey]) {
+        return localStorage[barFiltersKey].split(",");
+      } else {
+        return $scope.barProps.slice();
+      }
+    })();
 
     $scope.toggleBarFilter = function(filter) {
       var index = $scope.barFilters.indexOf(filter);
@@ -38,6 +46,10 @@ angular.module("metapoints").controller("graphs", ["$scope", "socket",
         $scope.barFilters.push(filter);
       } else {
         $scope.barFilters.splice(index, 1);
+      }
+
+      if(localStorage) {
+        localStorage[barFiltersKey] = $scope.barFilters.join(",");
       }
     };
   }
