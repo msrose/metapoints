@@ -343,15 +343,15 @@ select {
 }
 
 .bar.powerLevel {
-  background-color: green;
+  background-color: mediumseagreen;
 }
 
 .bar.luck {
-  background-color: yellow;
+  background-color: gold;
 }
 
 .bar.multiplier {
-  background-color: red;
+  background-color: coral;
 }
 
 .legend {

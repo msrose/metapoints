@@ -56,7 +56,7 @@
             Point Magnitude: <select id="pointDropdown" ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select>
           </div>
           <div class="group">
-            Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }"></select>
+            Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }:true"></select>
           </div>
           <div class="group">
             <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
