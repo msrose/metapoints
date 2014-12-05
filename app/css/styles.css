@@ -94,7 +94,7 @@ button {
 }
 
 .point-changes {
-  margin: 20px 0;
+  margin: 10px 0;
   width: 100%;
   overflow: hidden;
 }
@@ -139,7 +139,7 @@ button {
 }
 
 .separate-group.small {
-  padding-top: 5px;
+  padding-top: 10px;
 }
 
 .separate-group.large {
@@ -375,4 +375,30 @@ select {
   padding-bottom: 2px;
   border-radius: 2px;
   border: 1px solid gray;
+}
+
+.decorations {
+  width: 100%;
+  overflow: hidden;
+}
+
+.decorations .input-group {
+  float: left;
+  margin-right: 20px;
+}
+
+.decorations .input-group input {
+  width: 100px;
+}
+
+.decorations .decoration-toggle {
+  float: right;
+  margin-top: 5px;
+}
+
+.decorations .inputs {
+  margin: 10px 0 0 0;
+  padding-bottom: 5px;
+  overflow: hidden;
+  float: left;
 }

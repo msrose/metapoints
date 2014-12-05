@@ -19,6 +19,7 @@
     <script src="controllers/alert.js" type="text/javascript"></script>
     <script src="controllers/transactions.js" type="text/javascript"></script>
     <script src="controllers/chat.js" type="text/javascript"></script>
+    <script src="controllers/decorations.js" type="text/javascript"></script>
   </head>
   <body ng-app="metapoints">
     <div class="transactions" ng-controller="transactions" ng-style="{ width: collapsed ? '20px' : '200px' }">
@@ -42,27 +43,30 @@
         </ul>
       </div>
       <div class="main" ng-view></div>
-      <div class="point-changes" ng-controller="metapoints" ng-show="pointsData.length > 1">
-        <div class="decorations" ng-show="!!decorations && showDecorations">
-          <div class="group">
+      <div ng-controller="decorations" class="decorations">
+        <div class="inputs" ng-show="!!decorations && showDecorations">
+          <div class="input-group">
             Border Color: <input type="text" ng-model="decorations.borderColor" ng-change="changeDecorations()" />
           </div>
-          <div class="group">
+          <div class="input-group">
             Font Family: <input type="text" ng-model="decorations.fontFamily" ng-change="changeDecorations()" />
           </div>
         </div>
-        <div ng-class="{ 'separate-group': true, large: !!decorations && showDecorations }">
-          <div class="group">
-            Point Magnitude: <select id="pointDropdown" ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select>
-          </div>
-          <div class="group">
-            Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }:true"></select>
-          </div>
-          <div class="group">
-            <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
-            <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
-            <span class="timeout" ng-show="timeout > 0">{{timeout}}</span>
-          </div>
+        <div class="decoration-toggle clickable muted" ng-show="!!decorations" ng-click="toggleDecorations()">
+          {{ showDecorations ? 'Hide' : 'Show' }} Decorations
+        </div>
+      </div>
+      <div class="point-changes" ng-controller="metapoints" ng-show="pointsData.length > 1">
+        <div class="group">
+          Point Magnitude: <select id="pointDropdown" ng-model="selectedPointSize" ng-options="size.name as size.value * (useMultiplier ? multiplier : 1) for size in pointSizes | orderBy:'value'"></select>
+        </div>
+        <div class="group">
+          Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }:true"></select>
+        </div>
+        <div class="group">
+          <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
+          <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
+          <span class="timeout" ng-show="timeout > 0">{{timeout}}</span>
         </div>
         <div class="separate-group small">
           <div class="group" ng-show="multiplier > 1">
@@ -71,12 +75,6 @@
           </div>
           <div class="group">
             Cost: <b>{{cost}}</b> metapoint{{cost != 1 ? 's' : ''}}
-          </div>
-          <div class="group clickable" ng-show="!!decorations" ng-click="toggleDecorations()">
-            <span class="muted">
-              {{ showDecorations ? 'Hide' : 'Show' }} Decorations
-            </span>
-            <span>{{ showDecorations ? '&#8679;' : '&#8681;' }}</span>
           </div>
         </div>
         <div class="separate-group large" ng-show="!!authQuestion">
