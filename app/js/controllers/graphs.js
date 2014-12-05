@@ -25,7 +25,8 @@ angular.module("metapoints").controller("graphs", ["$scope", "socket",
         var person = $scope.pointsData[i];
         for(var j in props) {
           var prop = props[j];
-          person[prop + "BarSize"] = maxValues[prop] <= 0 ? 0 : Math.max(Math.round((person[prop] / maxValues[prop]) * 100), 0);
+          var barSize = Math.max(Math.round((person[prop] / maxValues[prop]) * 100), 0);
+          person[prop + "BarSize"] = maxValues[prop] <= 0 ? 0 : barSize;
         }
       }
     });
@@ -43,8 +44,8 @@ angular.module("metapoints").controller("graphs", ["$scope", "socket",
     $scope.toggleBarFilter = function(filter) {
       var index = $scope.barFilters.indexOf(filter);
       if(index == -1) {
-        $scope.barFilters.push(filter);
-      } else {
+        $scope.barFilters.unshift(filter);
+      } else if($scope.barFilters.length > 1){
         $scope.barFilters.splice(index, 1);
       }
 

@@ -1,8 +1,8 @@
 <div class="graphs">
-  <div class="person-graph" ng-repeat="p in pointsData">
+  <div class="person-graph" ng-repeat="p in pointsData | orderBy:barFilters:true">
     <div decorations="p.decorations" ng-class="{ name: true, decor: true, active: p.active > 0 }">{{p.name}}</div>
     <div class="bars">
-      <span ng-repeat="prop in barProps" ng-show="barFilters.indexOf(prop) !== -1" ng-class="'bar ' + prop" ng-style="{ width: p[prop + 'BarSize'] + '%' }"><span class="value">{{p[prop]}}</span></span>
+      <span ng-repeat="prop in barFilters" ng-class="'bar ' + prop" ng-style="{ width: p[prop + 'BarSize'] + '%' }"><span class="value">{{p[prop]}}</span></span>
     </div>
   </div>
   <div class="legend">
