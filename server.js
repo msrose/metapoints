@@ -30,10 +30,12 @@ var defaults = {
 };
 
 var config;
+var production = false;
 if(process.argv[2] !== "--prod") {
   var configFile = process.argv[2] || "./config.json";
   config = fs.existsSync(configFile) ? require(configFile) : {};
 } else {
+  production = true;
   config = JSON.parse(process.env.CONFIG);
   config.port = parseInt(process.env.PORT);
 }
@@ -45,7 +47,13 @@ console.log("Config initialized:", config);
 var transactions = transactionHandler(config.transactions || {});
 console.log("Initialized transactions:", transactions.config);
 
-var server = http.createServer(buildServerHandler()).listen(config.port, config.host);
+var server;
+if(!production) {
+  server = http.createServer(buildServerHandler()).listen(config.port, config.host);
+} else {
+  server = http.createServer(buildServerHandler()).listen(config.port);
+}
+
 var io = socket(server);
 
 var authQuestions = config.authQuestionsFile ? require(config.authQuestionsFile).questions : null;
