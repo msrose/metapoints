@@ -35,7 +35,7 @@ if(process.argv[2] !== "--prod") {
   config = fs.existsSync(configFile) ? require(configFile) : {};
 } else {
   config = JSON.parse(process.env.CONFIG);
-  config.port = process.env.PORT;
+  config.port = parseInt(process.env.PORT);
 }
 
 util.merge(config, defaults);
