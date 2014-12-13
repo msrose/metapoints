@@ -29,8 +29,15 @@ var defaults = {
   integrations: {}
 };
 
-var configFile = process.argv[2] || "./config.json";
-var config = fs.existsSync(configFile) ? require(configFile) : {};
+var config;
+if(process.argv[2] !== "--prod") {
+  var configFile = process.argv[2] || "./config.json";
+  config = fs.existsSync(configFile) ? require(configFile) : {};
+} else {
+  config = JSON.parse(process.env.CONFIG);
+  config.port = process.env.PORT;
+}
+
 util.merge(config, defaults);
 
 console.log("Config initialized:", config);
