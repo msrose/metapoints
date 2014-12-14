@@ -287,10 +287,11 @@ io.on("connection", function(socket) {
 
 function buildServerHandler() {
   return serverHandler.getHandler("./app", function(req) {
-    return people.findBy("ip", req.connection.remoteAddress);
+    var ip = util.getClientIP(req);
+    return people.findBy("ip", ip);
   }, {
     onRegister: function(req, res, body) {
-      var ip = req.connection.remoteAddress;
+      var ip = util.getClientIP(req);
       var name = qs.parse(body).name.split(/[^\w]/).join("").toLowerCase();
 
       if(!name) {
@@ -315,7 +316,7 @@ function buildServerHandler() {
       }
     },
     onIntegrationPost: function(req, res, body) {
-      var ip = req.connection.remoteAddress;
+      var ip = util.getClientIP(req);
       var integration = config.integrations[req.headers.metakey];
 
       if(!integration) {
