@@ -64,8 +64,8 @@
           Name: <select id="nameDropdown" ng-model="selectedName" ng-options="p.name as p.name for p in pointsData | filter:{ name: '!' + me }:true"></select>
         </div>
         <div class="group">
-          <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || !authAnswer">+</button>
-          <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || !authAnswer">-</button>
+          <button class="action-btn" ng-click="changeMetapoints('inc')" ng-disabled="timeout > 0 || authQuestion && !authAnswer">+</button>
+          <button class="action-btn" ng-click="changeMetapoints('dec')" ng-disabled="timeout > 0 || authQuestion && !authAnswer">-</button>
           <span class="timeout" ng-show="timeout > 0">{{timeout}}</span>
         </div>
         <div class="separate-group small">

@@ -148,7 +148,7 @@ function getChatMessage(sender, text) {
 }
 
 io.on("connection", function(socket) {
-  var ip = socket.handshake.address;
+  var ip = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
   var me = people.findBy("ip", ip);
 
   console.log("Socket connection established", ip);
