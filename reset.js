@@ -1,6 +1,15 @@
 var schemas = require("./schemas.json").schemas;
 
-var config = require(process.argv[2] || "./config.json");
+var config;
+if(process.argv[2] !== "--prod") {
+  config = require(process.argv[2] || "./config.json");
+} else {
+  config = JSON.parse(process.env.CONFIG);
+}
+
+config.pointsFile = config.pointsFile || "./points.json";
+config.messagesFile = config.messagesFile || "./messages.json";
+
 var db = require("./lib/filedb");
 
 var people = db(config.pointsFile, schemas.people, function(err) {
