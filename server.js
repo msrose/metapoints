@@ -47,15 +47,6 @@ console.log("Config initialized:", config);
 var transactions = transactionHandler(config.transactions || {});
 console.log("Initialized transactions:", transactions.config);
 
-var server;
-if(!production) {
-  server = http.createServer(buildServerHandler()).listen(config.port, config.host);
-} else {
-  server = http.createServer(buildServerHandler()).listen(config.port);
-}
-
-var io = socket(server);
-
 var authQuestions = config.authQuestionsFile ? require(config.authQuestionsFile).questions : null;
 if(authQuestions) {
   console.log("Loaded", authQuestions.length, "auth questions from", config.authQuestionsFile);
@@ -82,6 +73,15 @@ var messages = db(config.messagesFile, schemas.messages, function(err, info) {
   }
   console.log(info);
 });
+
+var server;
+if(!production) {
+  server = http.createServer(buildServerHandler()).listen(config.port, config.host);
+} else {
+  server = http.createServer(buildServerHandler()).listen(config.port);
+}
+
+var io = socket(server);
 
 function timeoutPerson(person, timeout, callbacks) {
   person.timeout = timeout;
