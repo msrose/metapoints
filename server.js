@@ -5,6 +5,7 @@ var qs = require("querystring");
 var socket = require("socket.io");
 var request = require("request");
 var truncate = require("truncate");
+var mongo = require("mongodb").MongoClient;
 
 var db = require("./lib/filedb");
 var util = require("./lib/util");
@@ -26,7 +27,8 @@ var defaults = {
   port: 1338,
   authQuestionsFile: false,
   subscribers: [],
-  integrations: {}
+  integrations: {},
+  mongoUrl: "mongodb://localhost:27017/metapoints"
 };
 
 var config;
@@ -38,6 +40,7 @@ if(process.argv[2] !== "--prod") {
   production = true;
   config = JSON.parse(process.env.CONFIG);
   config.port = parseInt(process.env.PORT);
+  config.mongoUrl = process.env.MONGO_URL;
 }
 
 util.merge(config, defaults);
@@ -60,28 +63,62 @@ for(var key in config.integrations) {
   integrationsList.push(config.integrations[key].name);
 }
 
-var people = db(config.pointsFile, schemas.people, function(err, info) {
+var mongoDB;
+var io;
+var people;
+var messages;
+
+mongo.connect(config.mongoUrl, function(err, database) {
   if(err) {
-    return console.error("Failed to init people:", err);
+    return console.error("Error connecting to mongo.");
   }
-  console.log(info);
+  console.log("Connected to mongo at", config.mongoUrl);
+
+  mongoDB = database;
+
+  var saveData = mongoDB.collection("saveData");
+
+  saveData.find().toArray(function(err, docs) {
+    var peopleData, messageData;
+    var data;
+
+    if(docs.length > 0) {
+      data = docs[0];
+    } else {
+      data = {};
+      saveData.insert({ peopleData: "{\"collection\":[]}", messageData: "{\"collection\":[]}" }, function(err, result) {
+        if(err) {
+          return console.error("Error inserting new data into mongo.");
+        }
+        console.log("Inserted new data into mongo.");
+      });
+    }
+
+    people = db(data.peopleData, schemas.people, function(err, info) {
+      if(err) {
+        return console.error("Failed to init people:", err);
+      }
+      console.log(info);
+    });
+
+    messages = db(data.messageData, schemas.messages, function(err, info) {
+      if(err) {
+        return console.error("Failed to init messages:", err);
+      }
+      console.log(info);
+    });
+
+    var server;
+    if(!production) {
+      server = http.createServer(buildServerHandler()).listen(config.port, config.host);
+    } else {
+      server = http.createServer(buildServerHandler()).listen(config.port);
+    }
+
+    io = socket(server);
+    start();
+  });
 });
-
-var messages = db(config.messagesFile, schemas.messages, function(err, info) {
-  if(err) {
-    return console.error("Failed to init messages:", err);
-  }
-  console.log(info);
-});
-
-var server;
-if(!production) {
-  server = http.createServer(buildServerHandler()).listen(config.port, config.host);
-} else {
-  server = http.createServer(buildServerHandler()).listen(config.port);
-}
-
-var io = socket(server);
 
 function timeoutPerson(person, timeout, callbacks) {
   person.timeout = timeout;
@@ -147,143 +184,228 @@ function getChatMessage(sender, text) {
   return { sender: sender, text: text, time: dateString + " " + util.getCurrentTime() };
 }
 
-io.on("connection", function(socket) {
-  var ip = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
-  var me = people.findBy("ip", ip);
+function start() {
+  io.on("connection", function(socket) {
+    var ip = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
+    var me = people.findBy("ip", ip);
 
-  console.log("Socket connection established", ip);
+    console.log("Socket connection established", ip);
 
-  if(!me) {
-    return console.error("Unknown person at IP", ip);
-  }
-
-  var timeoutStartCallback = function() {
-    var timeoutData = { timeout: me.timeout };
-    if(authQuestions) {
-      timeoutData.auth = authQuestions[me.authQuestion].text;
+    if(!me) {
+      return console.error("Unknown person at IP", ip);
     }
-    io.sockets.in(me.ip).emit("timeout change", timeoutData);
-  };
 
-  var timeoutChangeCallback = function() {
-    io.sockets.in(me.ip).emit("timeout change", { timeout: me.timeout });
-  };
+    var timeoutStartCallback = function() {
+      var timeoutData = { timeout: me.timeout };
+      if(authQuestions) {
+        timeoutData.auth = authQuestions[me.authQuestion].text;
+      }
+      io.sockets.in(me.ip).emit("timeout change", timeoutData);
+    };
 
-  socket.join(me.ip);
-  socket.emit("transaction list", transactions.all());
-  if(integrationsList.length > 0) {
-    socket.emit("chat message", getChatMessage("metapoints", "Active integrations: " + integrationsList.join(", ")));
-  }
-  socket.emit("saved chat", messages.collection());
+    var timeoutChangeCallback = function() {
+      io.sockets.in(me.ip).emit("timeout change", { timeout: me.timeout });
+    };
 
-  setAuthQuestion(me);
-  timeoutStartCallback();
-  me.active++;
-  io.emit("update", people.collection());
-
-  socket.on("disconnect", function() {
-    console.log("Socket disconnected", ip);
-    if(me) {
-      me.active--;
-      io.emit("update", people.collection());
+    socket.join(me.ip);
+    socket.emit("transaction list", transactions.all());
+    if(integrationsList.length > 0) {
+      socket.emit("chat message", getChatMessage("metapoints", "Active integrations: " + integrationsList.join(", ")));
     }
-  });
+    socket.emit("saved chat", messages.collection());
 
-  socket.on("request me data", function(data, ack) {
-    ack(me);
-  });
+    setAuthQuestion(me);
+    timeoutStartCallback();
+    me.active++;
+    io.emit("update", people.collection());
 
-  socket.on("request update", function(data) {
-    socket.emit("update", people.collection());
-  });
+    socket.on("disconnect", function() {
+      console.log("Socket disconnected", ip);
+      if(me) {
+        me.active--;
+        io.emit("update", people.collection());
+      }
+    });
 
-  socket.on("change metapoints", function(data) {
-    if(typeof(data) === "object" && me && me.timeout === 0) {
-      if(!authQuestions || data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
-        changeMetapoints(data, me, function(err, amount) {
-          if(err) {
-            return socket.emit("alert message", getAlertMessage("error", "Could not update metapoints: " + err));
-          }
-          io.emit("update", {
-            collection: people.all(),
-            changed: {
-              time: util.getCurrentTime(),
-              name: data.name,
-              changer: me.name,
-              desc: data.type === "inc" ? "increased" : "decreased",
-              amount: amount,
-              reason: ""
+    socket.on("request me data", function(data, ack) {
+      ack(me);
+    });
+
+    socket.on("request update", function(data) {
+      socket.emit("update", people.collection());
+    });
+
+    socket.on("change metapoints", function(data) {
+      if(typeof(data) === "object" && me && me.timeout === 0) {
+        if(!authQuestions || data.authAnswer && util.sanitizeAuthInput(data.authAnswer) === authQuestions[me.authQuestion].answer) {
+          changeMetapoints(data, me, function(err, amount) {
+            if(err) {
+              return socket.emit("alert message", getAlertMessage("error", "Could not update metapoints: " + err));
             }
+            io.emit("update", {
+              collection: people.all(),
+              changed: {
+                time: util.getCurrentTime(),
+                name: data.name,
+                changer: me.name,
+                desc: data.type === "inc" ? "increased" : "decreased",
+                amount: amount,
+                reason: ""
+              }
+            });
+            timeoutPerson(me, config.pointChangeIntervalInSec + Math.round(amount * config.amountTimeoutFactor), {
+              started: timeoutStartCallback,
+              changed: timeoutChangeCallback
+            });
           });
-          timeoutPerson(me, config.pointChangeIntervalInSec + Math.round(amount * config.amountTimeoutFactor), {
+        } else if(authQuestions) {
+          timeoutPerson(me, config.incorrectAuthTimeoutInSec, {
             started: timeoutStartCallback,
             changed: timeoutChangeCallback
           });
-        });
-      } else if(authQuestions) {
-        timeoutPerson(me, config.incorrectAuthTimeoutInSec, {
-          started: timeoutStartCallback,
-          changed: timeoutChangeCallback
-        });
-        console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
-        socket.emit("alert message", getAlertMessage("error", "Incorrect auth answer."));
+          console.log("Incorrect auth answer by", me.name + ":", data.authAnswer);
+          socket.emit("alert message", getAlertMessage("error", "Incorrect auth answer."));
+        }
+      } else {
+        socket.emit("alert message", getAlertMessage("error", "You are timed out."));
       }
-    } else {
-      socket.emit("alert message", getAlertMessage("error", "You are timed out."));
-    }
-  });
+    });
 
-  socket.on("request cost", function(data, ack) {
-    if(typeof(data) === "object") {
-      ack(getCost(getAmount(data.size, data.multiplier, data.useMultiplier)));
-    }
-  });
+    socket.on("request cost", function(data, ack) {
+      if(typeof(data) === "object") {
+        ack(getCost(getAmount(data.size, data.multiplier, data.useMultiplier)));
+      }
+    });
 
-  transactions.all().forEach(function(t) {
-    socket.on(t.socketEvent, function(data) {
-      if(me) {
-        transactions[t.socketHandler](me, data, function(err, info, logInfo) {
+    transactions.all().forEach(function(t) {
+      socket.on(t.socketEvent, function(data) {
+        if(me) {
+          transactions[t.socketHandler](me, data, function(err, info, logInfo) {
+            if(err) {
+              return socket.emit("alert message", getAlertMessage("error", err));
+            }
+            console.log("Transaction for", me.name + ":", info, logInfo || "");
+            io.emit("update", people.collection());
+            socket.emit("alert message", getAlertMessage("info", info));
+          });
+        }
+      });
+    });
+
+    socket.on("send chat message", function(message) {
+      var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
+      if(me && sanitizedMsg) {
+        console.log("Chat message received from", me.name);
+        var messageObj = getChatMessage(me.name, sanitizedMsg);
+        messages.add(messageObj, function(err) {
           if(err) {
-            return socket.emit("alert message", getAlertMessage("error", err));
+            return console.err("Error saving message from", me.name);
           }
-          console.log("Transaction for", me.name + ":", info, logInfo || "");
-          io.emit("update", people.collection());
-          socket.emit("alert message", getAlertMessage("info", info));
+          if(messages.count() > 10) {
+            var toRemove = messages.at(0);
+            messages.remove(toRemove);
+          }
         });
+        io.emit("chat message", messageObj);
+      }
+    });
+
+    socket.on("change decorations", function(data) {
+      if(typeof(data) === "object" && me && me.decorations) {
+        if("borderColor" in data) {
+          me.decorations.borderColor = data.borderColor;
+        }
+        if("fontFamily" in data) {
+          me.decorations.fontFamily = data.fontFamily;
+        }
+        io.emit("update", people.collection());
       }
     });
   });
 
-  socket.on("send chat message", function(message) {
-    var sanitizedMsg = message ? truncate(message.trim(), 500) : null;
-    if(me && sanitizedMsg) {
-      console.log("Chat message received from", me.name);
-      var messageObj = getChatMessage(me.name, sanitizedMsg);
-      messages.add(messageObj, function(err) {
-        if(err) {
-          return console.err("Error saving message from", me.name);
+  console.log("Server running at " + config.host + ":" + config.port);
+
+  setInterval(function() {
+    if(config.jackpot && people.count() > 0) {
+      var luckMap = {};
+      var totalLuck = 0;
+      people.all().forEach(function(person) {
+        totalLuck += person.luck;
+        if(person.active > 0) {
+          totalLuck += Math.ceil(person.luck / 2);
         }
-        if(messages.count() > 10) {
-          var toRemove = messages.at(0);
-          messages.remove(toRemove);
+        luckMap[totalLuck] = person;
+      });
+      var randomIndex = Math.floor(Math.random() * totalLuck) + 1;
+
+      var luckMapNames = [];
+      for(var prop in luckMap) {
+        luckMapNames.push(prop + ": " + luckMap[prop].name);
+      }
+      console.log("Generated luck map {", luckMapNames.join(", "), "} with random index", randomIndex);
+
+      while(!(randomIndex in luckMap)) {
+        randomIndex++;
+      }
+
+      var person = luckMap[randomIndex];
+      person.metapoints += config.jackpot;
+      person.lastUpdatedBy = "The Jackpot";
+      io.emit("update", {
+        collection: people.all(),
+        changed: {
+          time: util.getCurrentTime(),
+          name: person.name,
+          changer: "The Jackpot",
+          desc: "increased",
+          amount: config.jackpot,
+          reason: "being the lucky winner"
         }
       });
-      io.emit("chat message", messageObj);
+      console.log("Jackpot increased", person.name + "'s metapoints by", config.jackpot);
     }
-  });
+  }, config.jackpotIntervalInMins * 60 * 1000);
 
-  socket.on("change decorations", function(data) {
-    if(typeof(data) === "object" && me && me.decorations) {
-      if("borderColor" in data) {
-        me.decorations.borderColor = data.borderColor;
+  var lastStandingsPost = "";
+
+  setInterval(function() {
+    console.log(util.getCurrentTime(), "Preparing to save...");
+
+    var peopleSaveData = people.getSaveData();
+    var messageSaveData = messages.getSaveData();
+    mongoDB.collection("saveData").update({},
+      { $set: { peopleData: peopleSaveData, messageData: messageSaveData } },
+    function(err, result) {
+      if(err) {
+        return console.error("Error updating mongo");
       }
-      if("fontFamily" in data) {
-        me.decorations.fontFamily = data.fontFamily;
+      console.log("Updated mongo");
+    });
+
+    if(config.subscribers.length > 0) {
+      var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
+      var infoList = [];
+      people.all().forEach(function(person) {
+        infoList.push(person.name + ": " + person.metapoints);
+      });
+      text += infoList.join(", ");
+
+      if(text !== lastStandingsPost) {
+        config.subscribers.forEach(function(subscriber) {
+          request.post(subscriber.postUrl, { json: { text: text } }, function(err, res) {
+            if(err) {
+              return console.error("Error posting to", subscriber.name);
+            }
+            console.log("Posting to", subscriber.name, res.statusCode);
+            lastStandingsPost = text;
+          });
+        });
+      } else {
+        console.log("No changes since last post to subscribers.");
       }
-      io.emit("update", people.collection());
     }
-  });
-});
+  }, config.saveFreqInMins * 60 * 1000);
+}
 
 function buildServerHandler() {
   return serverHandler.getHandler("./app", function(req) {
@@ -358,88 +480,3 @@ function buildServerHandler() {
     }
   });
 }
-
-console.log("Server running at " + config.host + ":" + config.port);
-
-setInterval(function() {
-  if(config.jackpot && people.count() > 0) {
-    var luckMap = {};
-    var totalLuck = 0;
-    people.all().forEach(function(person) {
-      totalLuck += person.luck;
-      if(person.active > 0) {
-        totalLuck += Math.ceil(person.luck / 2);
-      }
-      luckMap[totalLuck] = person;
-    });
-    var randomIndex = Math.floor(Math.random() * totalLuck) + 1;
-
-    var luckMapNames = [];
-    for(var prop in luckMap) {
-      luckMapNames.push(prop + ": " + luckMap[prop].name);
-    }
-    console.log("Generated luck map {", luckMapNames.join(", "), "} with random index", randomIndex);
-
-    while(!(randomIndex in luckMap)) {
-      randomIndex++;
-    }
-
-    var person = luckMap[randomIndex];
-    person.metapoints += config.jackpot;
-    person.lastUpdatedBy = "The Jackpot";
-    io.emit("update", {
-      collection: people.all(),
-      changed: {
-        time: util.getCurrentTime(),
-        name: person.name,
-        changer: "The Jackpot",
-        desc: "increased",
-        amount: config.jackpot,
-        reason: "being the lucky winner"
-      }
-    });
-    console.log("Jackpot increased", person.name + "'s metapoints by", config.jackpot);
-  }
-}, config.jackpotIntervalInMins * 60 * 1000);
-
-var lastStandingsPost = "";
-
-setInterval(function() {
-  console.log(util.getCurrentTime(), "Preparing to save...");
-  people.save(function(err) {
-    if(err) {
-      return console.error("Error saving data:", err);
-    }
-    console.log("People saved to", config.pointsFile);
-  });
-
-  messages.save(function(err) {
-    if(err) {
-      return console.error("Error saving messages:", err);
-    }
-    console.log("Messages saved to", config.messagesFile);
-  });
-
-  if(config.subscribers.length > 0) {
-    var text = "<http://" + config.host + ":" + config.port + "|Current standings>:\n";
-    var infoList = [];
-    people.all().forEach(function(person) {
-      infoList.push(person.name + ": " + person.metapoints);
-    });
-    text += infoList.join(", ");
-
-    if(text !== lastStandingsPost) {
-      config.subscribers.forEach(function(subscriber) {
-        request.post(subscriber.postUrl, { json: { text: text } }, function(err, res) {
-          if(err) {
-            return console.error("Error posting to", subscriber.name);
-          }
-          console.log("Posting to", subscriber.name, res.statusCode);
-          lastStandingsPost = text;
-        });
-      });
-    } else {
-      console.log("No changes since last post to subscribers.");
-    }
-  }
-}, config.saveFreqInMins * 60 * 1000);
