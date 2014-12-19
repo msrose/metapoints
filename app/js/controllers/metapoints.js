@@ -66,7 +66,7 @@ angular.module("metapoints").controller("metapoints", ["$scope", "socket", "poin
     };
 
     $scope.changeMetapoints = function(type) {
-      if($scope.authAnswer && $scope.timeout === 0) {
+      if((!$scope.authQuestion || $scope.authAnswer) && $scope.timeout === 0) {
         socket.emit("change metapoints", {
           name: $scope.selectedName,
           type: type,

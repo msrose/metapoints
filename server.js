@@ -68,7 +68,7 @@ var messages;
 
 mongo.connect(config.mongoUrl, function(err, database) {
   if(err) {
-    return console.error("Error connecting to mongo.");
+    return console.error("Error connecting to mongo.", err);
   }
   console.log("Connected to mongo at", config.mongoUrl);
 
