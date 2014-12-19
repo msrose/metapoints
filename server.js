@@ -14,8 +14,7 @@ var serverHandler = require("./lib/serverhandler");
 var schemas = require("./schemas.json").schemas;
 
 var defaults = {
-  pointsFile: "./points.json",
-  messagesFile: "./messages.json",
+  mongoUrl: "mongodb://localhost:27017/metapoints",
   saveFreqInMins: 1,
   pointChangeIntervalInSec: 10,
   amountTimeoutFactor: 0.05,
@@ -27,8 +26,7 @@ var defaults = {
   port: 1338,
   authQuestionsFile: false,
   subscribers: [],
-  integrations: {},
-  mongoUrl: "mongodb://localhost:27017/metapoints"
+  integrations: {}
 };
 
 var config;

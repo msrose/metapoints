@@ -1,6 +1,5 @@
 {
-  "pointsFile": "./points.json",
-  "messagesFile": "./messages.json",
+  "mongoUrl": "mongodb://localhost:27017/metapoints",
   "saveFreqInMins": 5,
   "pointChangeIntervalInSec": 10,
   "amountTimeoutFactor": 0.05,

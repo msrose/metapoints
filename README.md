@@ -1,5 +1,7 @@
 # Metapoints
 
+You can try out metapoints [here](https://metapoints.herokuapp.com).
+
 Increase your metapoints by contributing to this project.
 
 Built with nodejs. You should know exactly what to do.
