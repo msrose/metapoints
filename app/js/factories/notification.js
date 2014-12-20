@@ -5,7 +5,7 @@ angular.module("metapoints").factory("notification", ["$timeout",
     return {
       notify: function(data, callback) {
         if(Notification) {
-          var notification = new Notification(data.title, { body: data.body, icon: "metaicon.png" });
+          var notification = new Notification(data.title, { body: data.body, icon: "metaicon.PNG" });
           callback(notification);
 
           if(data.dismiss) {
